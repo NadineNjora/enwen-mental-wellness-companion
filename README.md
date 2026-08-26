@@ -43,7 +43,5 @@ docs/        Requirements, architecture, diagrams, and research documentation
 - Phase 3: Wellness resources, Llama 3, RAG, and chat persistence
 - Phase 4: Safety controls, testing, evaluation, deployment, and documentation
 
-## Privacy
 
-Never commit passwords, API keys, database credentials, private journal entries, chat transcripts, or research-participant data. Use environment variables locally and keep `.env` files outside version control.
 
