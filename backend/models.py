@@ -72,3 +72,26 @@ class Consent(Base):
         server_default=func.now(),
         nullable=False,
     )
+
+
+class MoodEntry(Base):
+    __tablename__ = "mood_entries"
+
+    __table_args__ = (
+        CheckConstraint(
+            "mood_score BETWEEN 1 AND 5",
+            name="ck_mood_entries_score",
+        ),
+    )
+
+    mood_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.user_id"), nullable=False, index=True
+    )
+    mood_score: Mapped[int] = mapped_column(nullable=False)
+    note: Mapped[str | None] = mapped_column(String(1000))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )

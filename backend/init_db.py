@@ -8,8 +8,7 @@ def create_tables():
     Base.metadata.create_all(bind=engine)
 
     table_names = inspect(engine).get_table_names()
-
-    for name in ("users", "consents"):
+    for name in ("users", "consents", "mood_entries"):
         if name not in table_names:
             raise RuntimeError(f"Table was not found: {name}")
 
