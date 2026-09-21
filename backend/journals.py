@@ -126,3 +126,62 @@ def read_my_journal(
 
     response.headers["Cache-Control"] = "no-store"
     return result
+@router.put("/{journal_id}", response_model=JournalResponse)
+def update_my_journal(
+    journal_id: UUID,
+    data: JournalCreate,
+    response: Response,
+    current_user: AccountResponse = Depends(require_journal_consent),
+):
+    try:
+        with Session(engine) as session:
+            with session.begin():
+                entry = session.scalar(
+                    select(JournalEntry)
+                    .where(
+                        JournalEntry.journal_id == journal_id,
+                        JournalEntry.user_id == current_user.user_id,
+                    )
+                    .with_for_update()
+                )
+                if entry is None:
+                    raise HTTPException(404, "Journal entry not found.")
+
+                entry.title = data.title
+                entry.content = data.content
+                session.flush()
+                session.refresh(entry)
+                result = JournalResponse.model_validate(entry)
+
+    except SQLAlchemyError:
+        raise HTTPException(503, "Journal entry could not be updated.") from None
+
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+@router.delete("/{journal_id}", status_code=204, response_class=Response)
+def delete_my_journal(
+    journal_id: UUID,
+    current_user: AccountResponse = Depends(get_current_user),
+):
+    try:
+        with Session(engine) as session:
+            with session.begin():
+                entry = session.scalar(
+                    select(JournalEntry)
+                    .where(
+                        JournalEntry.journal_id == journal_id,
+                        JournalEntry.user_id == current_user.user_id,
+                    )
+                    .with_for_update()
+                )
+                if entry is None:
+                    raise HTTPException(404, "Journal entry not found.")
+
+                session.delete(entry)
+
+    except SQLAlchemyError:
+        raise HTTPException(503, "Journal entry could not be deleted.") from None
+
+    return Response(status_code=204, headers={"Cache-Control": "no-store"})
