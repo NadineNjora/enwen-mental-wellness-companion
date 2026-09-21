@@ -7,11 +7,13 @@ from authentication import router as authentication_router
 from database import engine
 from registration import router as registration_router
 from moods import router as moods_router
+from journals import router as journals_router
 
 app = FastAPI(title="ENWEN API")
 app.include_router(registration_router)
 app.include_router(authentication_router)
 app.include_router(moods_router)
+app.include_router(journals_router)
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, error: RequestValidationError):
