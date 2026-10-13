@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ENWEN | Your wellness space</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">ENWEN</a>
+    <span class="badge">Student project · Prototype</span>
+  </header>
+
+  <main class="layout">
+    <section class="intro">
+      <p class="eyebrow">A little room for yourself</p>
+      <h1>Your space,<br>your pace.</h1>
+
+      <p class="intro-text">
+        A mental-wellness companion for Kenyan university students.<br>
+        Take one breath, one thought, one day at a time.
+      </p>
+
+      <p class="safety-note">
+        This is a learning prototype. Use fictional information only.
+        ENWEN is not an emergency service or a replacement for
+        professional care. Kindly reach out to a trained professional
+        if you are in distress.
+      </p>
+    </section>
+
+    <section class="card" aria-label="ENWEN account">
+
+      <!-- Login screen -->
+      <div id="login-panel">
+        <p class="eyebrow">Hey buddy!<br>Let's dive back in 🙋</p>
+        <h2>Log in to ENWEN</h2>
+        <p class="muted">Use the demo account you registered earlier.</p>
+
+        <form id="login-form">
+          <label for="email">Email address</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            maxlength="254"
+            required
+          >
+
+          <label for="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            maxlength="128"
+            required
+          >
+
+          <button id="login-button" type="submit">Log in</button>
+        </form>
+      </div>
+
+      <!-- Account screen: shown after login -->
+      <div id="account-panel" hidden>
+        <p class="eyebrow">Great stuff 😉 you are connected!</p>
+        <h2 id="welcome-title" tabindex="-1"></h2>
+        <p id="account-email" class="muted"></p>
+        <p id="consent-status" class="account-note"></p>
+
+        <!-- Mood check-in form -->
+        <section class="mood-section" aria-labelledby="mood-title">
+          <h3 id="mood-title">A little check-in.</h3>
+          <p class="muted">Every mood has a place here 😌</p>
+
+          <form id="mood-form">
+            <fieldset id="mood-fields" disabled>
+              <legend>How are you feeling right now?</legend>
+
+              <div class="mood-options">
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="1" required>
+                  <span>1 · Very low 😓</span>
+                </label>
+
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="2" required>
+                  <span>2 · Low 😕</span>
+                </label>
+
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="3" required>
+                  <span>3 · Okay 😐</span>
+                </label>
+
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="4" required>
+                  <span>4 · Good 😊</span>
+                </label>
+
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="5" required>
+                  <span>5 · Great 😄</span>
+                </label>
+              </div>
+
+              <label for="mood-note">Wanna say a little more...?</label>
+              <textarea
+                id="mood-note"
+                name="note"
+                rows="3"
+                maxlength="1000"
+                aria-describedby="mood-note-help"
+                placeholder="What has today been like? 😊"
+              ></textarea>
+
+              <p id="mood-note-help" class="small-note">
+                Optional · Up to 1,000 characters.
+                Use fictional examples while testing.
+              </p>
+
+              <button type="submit">Save my check-in</button>
+            </fieldset>
+          </form>
+
+          <p
+            id="mood-message"
+            class="status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </section>
+
+        <!-- Mood history: connected in our next JavaScript step -->
+        <section class="mood-history" aria-labelledby="mood-history-title">
+          <div class="history-heading">
+            <h3 id="mood-history-title">Your recent check-ins</h3>
+            <button id="refresh-moods" type="button" disabled>
+              Refresh
+            </button>
+          </div>
+
+          <p class="muted">
+            This section will show up to 20 recent check-ins, newest first.
+          </p>
+
+          <p
+            id="mood-history-message"
+            class="status"
+            role="status"
+            aria-live="polite"
+          >
+            The layout is ready. We will connect your saved entries next.
+          </p>
+
+          <ol
+            id="mood-history-list"
+            class="history-list"
+            aria-busy="false"
+          ></ol>
+        </section>
+
+        <button id="logout-button" type="button">
+          Log out of this page
+        </button>
+      </div>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <p class="small-note">
+        For this first version, refreshing the page logs you out.
+      </p>
+    </section>
+  </main>
+
+  <footer>ENWEN · Built one thoughtful step at a time.</footer>
+</body>
+</html>

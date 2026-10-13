@@ -1,0 +1,278 @@
+:root {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #183b32;
+  background: #f5f6f0;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+
+.site-header {
+  max-width: 1120px;
+  margin: auto;
+  padding: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand {
+  color: #205745;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.badge {
+  padding: 8px 12px;
+  border: 1px solid #ced9cb;
+  border-radius: 30px;
+  font-size: 13px;
+}
+
+.layout {
+  max-width: 1120px;
+  margin: 48px auto;
+  padding: 0 28px;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 70px;
+  align-items: center;
+}
+
+.eyebrow {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: #456b58;
+}
+
+h1 {
+  font-size: clamp(38px, 5vw, 60px);
+  line-height: 1.1;
+  letter-spacing: -2px;
+}
+
+h2 { font-size: 28px; margin: 12px 0; }
+p { line-height: 1.6; }
+.intro-text { font-size: 18px; color: #52665b; }
+.safety-note { margin-top: 34px; font-size: 13px; color: #52665b; }
+
+.card {
+  background: white;
+  border: 1px solid #dfe5d9;
+  border-radius: 24px;
+  padding: 36px;
+  box-shadow: 0 16px 40px #183b320a;
+  min-width: 0;
+}
+
+.muted { color: #596d62; overflow-wrap: anywhere; }
+form { display: grid; gap: 10px; margin-top: 26px; }
+label { font-size: 14px; font-weight: 600; }
+
+input {
+  width: 100%;
+  padding: 13px 14px;
+  font: inherit;
+  border: 1px solid #b9c9bb;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  background: #205745;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  padding: 14px 20px;
+  cursor: pointer;
+}
+
+button:hover { background: #174334; }
+button:disabled { opacity: 0.65; cursor: wait; }
+
+input:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 3px solid #80ac8f;
+  outline-offset: 3px;
+}
+
+.account-note { background: #edf3e8; padding: 14px; border-radius: 10px; }
+.status { min-height: 24px; font-size: 14px; overflow-wrap: anywhere; }
+.status.error { color: #a32929; }
+.small-note, footer { font-size: 13px; color: #586b62; }
+.small-note { border-top: 1px solid #e7ece2; padding-top: 16px; }
+footer { padding: 24px; text-align: center; }
+
+@media (max-width: 760px) {
+  .site-header { flex-wrap: wrap; padding: 20px; }
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin: 16px auto;
+    padding: 0 20px;
+  }
+  .card { padding: 24px; }
+  h1 { margin: 12px 0; }
+}
+/* ENWEN's first expressive colour direction */
+:root {
+  --ink: #241c36;
+  --paper: #fff8ee;
+  --coral: #ff997e;
+  --lime: #ddf780;
+  --lilac: #e4d8ff;
+
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.brand { color: var(--ink); }
+
+.badge {
+  color: var(--ink);
+  background: var(--lime);
+  border: 2px solid var(--ink);
+}
+
+.intro {
+  padding: 28px;
+  background: var(--coral);
+  border: 2px solid var(--ink);
+  border-radius: 24px;
+}
+
+/* A geometric accent; we can develop your chosen print later. */
+.intro::before {
+  content: "";
+  display: block;
+  height: 18px;
+  margin-bottom: 24px;
+  border: 2px solid var(--ink);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ink) 0 12px,
+    var(--lime) 12px 24px,
+    var(--lilac) 24px 36px,
+    var(--coral) 36px 48px
+  );
+}
+
+.card {
+  border: 2px solid var(--ink);
+  box-shadow: 7px 7px 0 var(--ink);
+}
+
+.eyebrow,
+.intro-text,
+.safety-note,
+.muted {
+  color: #514359;
+}
+
+.account-note { background: var(--lilac); }
+
+button {
+  background: var(--ink);
+  border: 2px solid var(--ink);
+}
+
+button:hover { background: #6553c9; }
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #6553c9;
+  outline-offset: 3px;
+}
+
+/* Mood check-in */
+.mood-section {
+  margin: 24px 0;
+  padding-top: 20px;
+  border-top: 2px dashed var(--ink);
+}
+
+.mood-section h3 {
+  margin-bottom: 8px;
+  font-size: 24px;
+}
+
+#mood-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+#mood-fields legend {
+  padding: 0;
+  font-weight: 700;
+}
+
+.mood-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px;
+  margin: 16px 0 24px;
+}
+
+.mood-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.mood-option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+}
+
+.mood-option span {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  padding: 10px;
+  text-align: center;
+  background: white;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+}
+
+.mood-option input:checked + span {
+  background: var(--lime);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-weight: 800;
+}
+
+.mood-option input:focus-visible + span {
+  outline: 3px solid #6553c9;
+  outline-offset: 3px;
+}
+
+#mood-fields:disabled {
+  opacity: 0.6;
+}
+
+#mood-note {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  font: inherit;
+  color: var(--ink);
+  background: white;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  resize: vertical;
+}
