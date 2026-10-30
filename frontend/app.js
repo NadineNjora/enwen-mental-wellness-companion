@@ -34,7 +34,7 @@ function endSession(message = "You are logged out of this page.") {
 
   accountPanel.hidden = true;
   loginPanel.hidden = false;
-
+  renderPage({ focus: false, reset: true });
   showStatus(message);
   emailInput.focus();
 }
@@ -132,6 +132,7 @@ loginForm.addEventListener("submit", async (event) => {
     );
 
     const user = await apiRequest("/auth/me");
+    if (!accessToken) return;
 
     welcomeTitle.textContent =
       `Welcome, ${user.display_name || "student"}!`;
@@ -146,9 +147,10 @@ loginForm.addEventListener("submit", async (event) => {
     accountPanel.hidden = false;
 
     setupMoodPanel(user);
+    setupJournalPanel(user);
 
     showStatus("Login successful. Your account is connected.");
-    welcomeTitle.focus();
+    renderPage();
   } catch (error) {
     endSession("");
     showStatus(error.message, true);
@@ -255,11 +257,8 @@ moodForm.addEventListener("submit", async (event) => {
     }
 
     if (response.status === 403) {
-      moodConsent = false;
-      clearMoodHistory();
-
-      consentStatus.textContent =
-        "Current wellness consent is needed for wellness features.";
+      pauseWellnessFeatures();
+      return;
     }
 
     if (!response.ok) {
@@ -363,16 +362,7 @@ async function loadMoodHistory() {
     }
 
     if (response.status === 403) {
-      moodConsent = false;
-      moodFields.disabled = true;
-      clearMoodHistory();
-
-      const message =
-        "Current wellness consent is needed to view your check-ins.";
-
-      consentStatus.textContent = message;
-      historyMessage.textContent = message;
-      historyMessage.classList.add("error");
+      pauseWellnessFeatures();
       return;
     }
 

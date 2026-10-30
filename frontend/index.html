@@ -4,13 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ENWEN | Your wellness space</title>
+
   <link rel="stylesheet" href="/static/styles.css">
-  <script src="/static/app.js" defer></script>
+  <link rel="stylesheet" href="/static/navigation.css">
+
+  <script src="/static/app.js?v=20261015-login-fix" defer></script>
+  <script src="/static/journals.js?v=20261015-login-fix" defer></script>
+  <script src="/static/navigation.js?v=20261015-login-fix" defer></script>
 </head>
 
 <body>
   <header class="site-header">
-    <a class="brand" href="/">ENWEN</a>
+    <a class="brand" href="#/home">ENWEN</a>
+
+    <nav id="app-nav" aria-label="Main navigation" hidden>
+      <a href="#/home" data-route="home">Home</a>
+      <a href="#/check-in" data-route="check-in">Check-in</a>
+      <a href="#/mood-history" data-route="mood-history">History</a>
+      <a href="#/journal" data-route="journal">Journal</a>
+    </nav>
+
     <span class="badge">Student project · Prototype</span>
   </header>
 
@@ -65,15 +78,56 @@
         </form>
       </div>
 
-      <!-- Account screen: shown after login -->
+      <!-- Signed-in workspace -->
       <div id="account-panel" hidden>
-        <p class="eyebrow">Great stuff 😉 you are connected!</p>
-        <h2 id="welcome-title" tabindex="-1"></h2>
-        <p id="account-email" class="muted"></p>
-        <p id="consent-status" class="account-note"></p>
 
-        <!-- Mood check-in form -->
-        <section class="mood-section" aria-labelledby="mood-title">
+        <!-- HOME -->
+        <section
+          id="page-home"
+          class="app-page home-page"
+          data-page="home"
+          aria-labelledby="welcome-title"
+          hidden
+        >
+          <p class="eyebrow">Great stuff 😉 you are connected!</p>
+          <h2 id="welcome-title" tabindex="-1"></h2>
+          <p id="account-email" class="muted"></p>
+          <p id="consent-status" class="account-note"></p>
+
+          <p class="muted">What would feel right for you today?</p>
+
+          <div class="feature-grid">
+            <a class="feature-card" href="#/check-in">
+              <span class="feature-number" aria-hidden="true">01</span>
+              <h3>Check in with yourself</h3>
+              <p>Take a moment to notice how you feel.</p>
+              <span class="feature-link">Open check-in →</span>
+            </a>
+
+            <a class="feature-card" href="#/mood-history">
+              <span class="feature-number" aria-hidden="true">02</span>
+              <h3>Look back, gently</h3>
+              <p>Revisit your recent mood check-ins.</p>
+              <span class="feature-link">View history →</span>
+            </a>
+
+            <a class="feature-card" href="#/journal">
+              <span class="feature-number" aria-hidden="true">03</span>
+              <h3>Make room for your thoughts</h3>
+              <p>Write, save and revisit your thoughts.</p>
+              <span class="feature-link">Open journal →</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- MOOD CHECK-IN -->
+        <section
+          id="page-check-in"
+          class="mood-section app-page"
+          data-page="check-in"
+          aria-labelledby="mood-title"
+          hidden
+        >
           <h3 id="mood-title">A little check-in.</h3>
           <p class="muted">Every mood has a place here 😌</p>
 
@@ -135,8 +189,14 @@
           ></p>
         </section>
 
-        <!-- Mood history: connected in our next JavaScript step -->
-        <section class="mood-history" aria-labelledby="mood-history-title">
+        <!-- MOOD HISTORY -->
+        <section
+          id="page-mood-history"
+          class="mood-history app-page"
+          data-page="mood-history"
+          aria-labelledby="mood-history-title"
+          hidden
+        >
           <div class="history-heading">
             <h3 id="mood-history-title">Your recent check-ins</h3>
             <button id="refresh-moods" type="button" disabled>
@@ -162,6 +222,110 @@
             class="history-list"
             aria-busy="false"
           ></ol>
+        </section>
+
+        <!-- JOURNAL -->
+        <section
+          id="page-journal"
+          class="journal-section app-page"
+          data-page="journal"
+          aria-labelledby="journal-section-title"
+          hidden
+        >
+          <h3 id="journal-section-title">Your thoughts, your space.</h3>
+
+          <p class="muted">
+            A little room to reflect. No perfect sentences needed.
+          </p>
+
+          <form id="journal-form">
+            <fieldset id="journal-fields" disabled>
+              <legend>Write a new entry</legend>
+
+              <label for="journal-title">A title for your thoughts</label>
+              <input
+                id="journal-title"
+                name="title"
+                type="text"
+                maxlength="150"
+                aria-describedby="journal-title-help"
+                placeholder="A little moment from today"
+                required
+              >
+
+              <p id="journal-title-help" class="small-note">
+                Required · Up to 150 characters.
+              </p>
+
+              <label for="journal-content">
+                A space for your thoughts... you are safe🤍?
+              </label>
+              <textarea
+                id="journal-content"
+                name="content"
+                rows="8"
+                maxlength="10000"
+                aria-describedby="journal-content-help"
+                placeholder="Write a fictional entry to test your journal..."
+                required
+              ></textarea>
+
+              <p id="journal-content-help" class="small-note">
+                Required · Up to 10,000 characters.
+                Use fictional information while testing this prototype.
+              </p>
+
+              <button id="journal-save-button" type="submit">
+                Save my entry
+              </button>
+            </fieldset>
+          </form>
+
+          <p
+            id="journal-message"
+            class="status"
+            role="status"
+            aria-live="polite"
+          ></p>
+
+          <section aria-labelledby="journal-history-title">
+            <div class="history-heading">
+              <h4 id="journal-history-title">Your recent entries</h4>
+
+              <button id="refresh-journals" type="button" disabled>
+                Refresh journals
+              </button>
+            </div>
+
+            <p class="muted"></p>
+
+            <p
+              id="journal-history-message"
+              class="status"
+              role="status"
+              aria-live="polite"
+            ></p>
+
+            <ol
+              id="journal-list"
+              class="history-list"
+              aria-busy="false"
+            ></ol>
+          </section>
+
+          <article
+            id="journal-reader"
+            aria-labelledby="journal-reader-title"
+            hidden
+          >
+            <h4 id="journal-reader-title" tabindex="-1"></h4>
+            <time id="journal-reader-date" class="muted"></time>
+            <p id="journal-reader-content"></p>
+
+            <button id="close-journal" type="button">
+              Close entry
+            </button>
+          </article>
         </section>
 
         <button id="logout-button" type="button">
