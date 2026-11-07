@@ -3,266 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>ENWEN | Create your account</title>
-
   <link rel="stylesheet" href="/static/styles.css">
-  <script src="/static/register.js?v=20261102-registration" defer></script>
-
-  <style>
-    .registration-fields {
-      display: grid;
-      gap: 10px;
-      min-width: 0;
-      margin: 0;
-      padding: 0;
-      border: 0;
-    }
-
-    .registration-fields legend {
-      margin-bottom: 18px;
-      font-weight: 700;
-    }
-
-    .consent-notice {
-      margin: 16px 0;
-      padding: 18px;
-      background: var(--paper);
-      border: 1px solid var(--ink);
-      border-radius: 14px;
-    }
-
-    .consent-notice h3 {
-      margin-top: 0;
-    }
-
-    .consent-choice {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      line-height: 1.5;
-      margin-bottom: 16px;
-    }
-
-    .consent-choice input {
-      flex: 0 0 auto;
-      width: 20px;
-      height: 20px;
-      padding: 0;
-      margin: 3px 0 0;
-      accent-color: var(--ink);
-    }
-
-    .account-link {
-      color: var(--ink);
-      font-weight: 700;
-      text-underline-offset: 4px;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/register.css?v=20261104-two-steps">
+  <link rel="stylesheet" href="/static/personality.css?v=20261104-type-scale10">
+  <script src="/static/register.js?v=20261105-refine" defer></script>
 </head>
-
-<body>
+<body class="registration-page">
   <header class="site-header">
     <a class="brand" href="/#/login">ENWEN</a>
-    <span class="badge">Student project · Prototype</span>
+    <a class="account-link header-login" href="/#/login">Already here? Log in ↗</a>
   </header>
 
-  <main class="layout">
-    <section class="intro" aria-labelledby="registration-intro">
-      <p class="eyebrow">A little room for yourself</p>
+  <main class="registration-shell">
+    <aside class="registration-intro" aria-labelledby="registration-intro-title">
+      <span class="registration-tag">A little room for yourself</span>
+      <h1 id="registration-intro-title">Your space,<br>your pace.</h1>
+      <p class="registration-intro-copy">Start with a name you feel comfortable using. We’ll use it to welcome you when you log in.</p>
+      <div class="registration-flower" aria-hidden="true">
+        <svg viewBox="0 0 220 190" focusable="false">
+          <path d="M110 176V94M110 151Q61 149 62 121Q96 116 110 151M110 137Q154 139 160 108Q126 106 110 137" fill="#ddf780" stroke="#241c36" stroke-width="3" stroke-linejoin="round"/>
+          <g fill="#e4d8ff" stroke="#241c36" stroke-width="2.5">
+            <ellipse cx="110" cy="49" rx="23" ry="34"/>
+            <ellipse cx="110" cy="49" rx="23" ry="34" transform="rotate(72 110 80)"/>
+            <ellipse cx="110" cy="49" rx="23" ry="34" transform="rotate(144 110 80)"/>
+            <ellipse cx="110" cy="49" rx="23" ry="34" transform="rotate(216 110 80)"/>
+            <ellipse cx="110" cy="49" rx="23" ry="34" transform="rotate(288 110 80)"/>
+            <circle cx="110" cy="80" r="20" fill="#fff8ee"/>
+          </g>
+          <path d="M102 82q8 9 16 0" fill="none" stroke="#241c36" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="102" cy="75" r="2" fill="#241c36"/><circle cx="118" cy="75" r="2" fill="#241c36"/>
+        </svg>
+        <span>A little space to grow.</span>
+      </div>
+      <p class="registration-safety">Your name, your thoughts, your own pace. ENWEN supports reflection alongside human and professional care.</p>
+    </aside>
 
-      <h1 id="registration-intro">Your space,<br>your pace.</h1>
+    <section class="registration-card" aria-labelledby="register-heading">
+      <ol class="registration-steps" aria-label="Account setup progress">
+        <li id="account-step-indicator" aria-current="step"><span aria-hidden="true">01</span> Your account</li>
+        <li id="contact-step-indicator"><span aria-hidden="true">02</span> Your trusted person</li>
+      </ol>
+      <p class="eyebrow" id="register-eyebrow">Let’s make room for you · Step 1 of 2</p>
+      <h2 id="register-heading" tabindex="-1">Create your account</h2>
+      <p id="register-step-description" class="registration-description">A few details to make this space yours.</p>
 
-      <p class="intro-text">
-        Start with a name you feel comfortable using.
-        We’ll use it to welcome you when you log in.
-      </p>
-
-      <p class="safety-note">
-        ENWEN is an academic prototype, not an emergency service
-        or a replacement for professional care.
-        Use fictional information while testing.
-      </p>
-    </section>
-
-    <section class="card" aria-labelledby="register-heading">
-      <p class="eyebrow">Let’s make room for you</p>
-      <h2 id="register-heading">Create your account</h2>
-
-      <p class="muted">
-        Already have an account?
-        <a class="account-link" href="/#/login">Log in here</a>.
-      </p>
-
-      <form id="register-form" method="post">
-        <fieldset id="register-fields"
-                  class="registration-fields"
-                  disabled>
-          <legend>Your account details</legend>
-
-          <label for="register-name">What should we call you?</label>
-          <input
-            id="register-name"
-            name="display_name"
-            type="text"
-            autocomplete="nickname"
-            maxlength="100"
-            placeholder="Your preferred name"
-            required
-          >
-
-          <label for="register-email">Email address</label>
-          <input
-            id="register-email"
-            name="email"
-            type="email"
-            autocomplete="username"
-            maxlength="254"
-            required
-          >
-
-          <label for="register-password">Create a password</label>
-          <input
-            id="register-password"
-            name="password"
-            type="password"
-            autocomplete="new-password"
-            minlength="12"
-            maxlength="128"
-            aria-describedby="password-help"
-            required
-          >
-
-          <p id="password-help" class="muted">
-            Use 12–128 characters. For this prototype, choose a
-            test password you do not use for any real account.
-          </p>
-
-          <label for="register-confirm-password">
-            Confirm your password
-          </label>
-          <input
-            id="register-confirm-password"
-            name="password_confirmation"
-            type="password"
-            autocomplete="new-password"
-            minlength="12"
-            maxlength="128"
-            required
-          >
-
-          <section class="consent-notice"
-                   aria-labelledby="consent-heading">
-            <h3 id="consent-heading">Before you join</h3>
-
-            <p id="registration-consent-text">
-              The current consent notice will load here once
-              we connect this screen to the backend.
-            </p>
-
-            <p id="registration-consent-version" class="muted"></p>
+      <form id="register-form" method="post" novalidate>
+        <fieldset id="register-fields" disabled>
+          <legend class="visually-hidden">Create your ENWEN account</legend>
+          <section id="account-step" aria-label="Step 1: Your account">
+            <div class="registration-grid">
+              <div class="registration-field">
+                <label for="register-name">What should we call you?</label>
+                <input id="register-name" name="display_name" type="text" autocomplete="nickname"
+                  maxlength="100" placeholder="Your preferred name" required>
+              </div>
+              <div class="registration-field">
+                <label for="register-email">Email address</label>
+                <input id="register-email" name="email" type="email" autocomplete="username"
+                  maxlength="254" placeholder="student@example.com" required>
+              </div>
+              <div class="registration-field">
+                <label for="register-password">Create a password</label>
+                <input id="register-password" name="password" type="password" autocomplete="new-password"
+                  minlength="12" maxlength="128" aria-describedby="password-help" required>
+              </div>
+              <div class="registration-field">
+                <label for="register-confirm-password">Confirm your password</label>
+                <input id="register-confirm-password" name="password_confirmation" type="password"
+                  autocomplete="new-password" minlength="12" maxlength="128" required>
+              </div>
+            </div>
+            <p id="password-help" class="field-hint">12–128 characters. Choose a password unique to your ENWEN account.</p>
+            <section class="registration-notice" aria-labelledby="consent-heading">
+              <h3 id="consent-heading">Before you join</h3>
+              <p id="registration-consent-text">Loading the current consent notice...</p>
+              <p id="registration-consent-version" class="notice-version" hidden></p>
+            </section>
+            <label class="consent-choice" for="register-consent">
+              <input id="register-consent" name="consent_accepted" type="checkbox" required>
+              <span>I have read and accept the consent notice shown above.</span>
+            </label>
           </section>
 
-          <label class="consent-choice" for="register-consent">
-            <input
-              id="register-consent"
-              name="consent_accepted"
-              type="checkbox"
-              required
-            >
-            <span>
-              I have read and accept the consent notice shown above.
-            </span>
-          </label>
-
-        <h3>Your trusted person</h3>
-
-<p class="muted">
-  Use fictional details for this prototype. No invitation
-  or alert email will be sent.
-</p>
-
-<label for="contact-name">Their name</label>
-<input
-  id="contact-name"
-  name="contact_name"
-  type="text"
-  maxlength="100"
-  autocomplete="off"
-  required
->
-
-<label for="contact-relationship">Relationship (optional)</label>
-<input
-  id="contact-relationship"
-  name="contact_relationship"
-  type="text"
-  maxlength="50"
-  autocomplete="off"
-  placeholder="For example, friend or sibling"
->
-
-<label for="contact-email">Their email address</label>
-<input
-  id="contact-email"
-  name="contact_email"
-  type="email"
-  maxlength="254"
-  autocomplete="off"
-  aria-describedby="contact-email-help"
-  required
->
-
-<p id="contact-email-help" class="muted">
-  Use a different email from your own test account.
-</p>
-
-<section class="consent-notice"
-         aria-labelledby="contact-consent-heading">
-  <h3 id="contact-consent-heading">Contact-testing permission</h3>
-  <p id="contact-consent-text">Loading the current notice...</p>
-  <p id="contact-consent-version" class="muted"></p>
-</section>
-
-<label class="consent-choice" for="contact-consent">
-  <input
-    id="contact-consent"
-    name="contact_consent_accepted"
-    type="checkbox"
-    required
-  >
-  <span>
-    I have read and accept the contact-testing notice.
-
-  </span>
-</label>
-          <button id="register-button" type="submit">
-            Create my account
-          </button>
+          <section id="contact-step" aria-label="Step 2: Your trusted person" hidden>
+            <p class="account-review">For <strong id="register-account-summary"></strong> · <button id="edit-account" type="button">Edit account details</button></p>
+            <div class="registration-grid">
+              <div class="registration-field">
+                <label for="contact-name">Their name</label>
+                <input id="contact-name" name="contact_name" type="text" maxlength="100"
+                  autocomplete="off" placeholder="Your trusted person’s name" required>
+              </div>
+              <div class="registration-field">
+                <label for="contact-relationship">Relationship</label>
+                <input id="contact-relationship" name="contact_relationship" type="text" maxlength="50"
+                  autocomplete="off" placeholder="Friend, sibling..." >
+              </div>
+              <div class="registration-field full-width">
+                <label for="contact-email">Their email address</label>
+                <input id="contact-email" name="contact_email" type="email" maxlength="254"
+                  autocomplete="off" placeholder="friend@example.com" aria-describedby="contact-email-help" required>
+              </div>
+            </div>
+            <p id="contact-email-help" class="field-hint">The current local inbox uses @example.com addresses. Choose a different address from your own.</p>
+            <section class="registration-notice" aria-labelledby="contact-consent-heading">
+              <h3 id="contact-consent-heading">Your trusted person’s privacy</h3>
+              <p id="contact-consent-text">Loading the current notice...</p>
+              <p id="contact-consent-version" class="notice-version" hidden></p>
+            </section>
+            <label class="consent-choice" for="contact-consent">
+              <input id="contact-consent" name="contact_consent_accepted" type="checkbox" required>
+              <span>I have read and accept this trusted-contact privacy notice.</span>
+            </label>
+          </section>
+          <div class="registration-actions">
+            <button id="register-back" class="secondary-button" type="button" hidden>← Back</button>
+            <button id="register-button" type="submit">Continue to trusted person →</button>
+          </div>
         </fieldset>
       </form>
-
-      <button id="reload-notices" type="button" hidden>
-  Retry loading consent notices
-</button>
-
-<p>
-  <a
-    id="registration-login-link"
-    class="account-link"
-    href="/#/login"
-    hidden
-  >Continue to log in</a>
-</p>
-      <p id="registration-status"
-         class="status"
-         role="status"
-         aria-live="polite">
-        Loading consent notices. If the form stays disabled, check that the backend is running.
-      </p>
+      <p id="registration-save-note" class="registration-footnote">Nothing is saved until you finish both steps.</p>
+      <button id="reload-notices" class="secondary-button" type="button" hidden>Retry loading consent notices</button>
+      <div id="registration-success" hidden>
+        <span class="success-mark" aria-hidden="true">✓</span>
+        <p>Your account and trusted person are saved. No invitation or alert email was sent.</p>
+        <a id="registration-login-link" class="account-link login-action" href="/#/login" hidden>Continue to log in →</a>
+      </div>
+      <a id="registration-check-login" class="account-link" href="/#/login" hidden>Check by logging in →</a>
+      <p id="registration-status" class="status" role="status" aria-live="polite">Loading consent notices...</p>
+      <noscript><p class="status error">Enable JavaScript to use this two-step registration form. Nothing has been submitted.</p></noscript>
     </section>
   </main>
-
   <footer>ENWEN · Built one thoughtful step at a time.</footer>
 </body>
 </html>

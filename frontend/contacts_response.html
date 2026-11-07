@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>ENWEN | Your invitation</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    .invitation-shell { max-width: 720px; margin: 30px auto; padding: 0 24px; }
+    .invitation-shell h1 { font-size: clamp(30px, 6vw, 44px); letter-spacing: -1px; }
+    .invitation-shell fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+    .invitation-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+    .invitation-actions button { flex: 1 1 180px; }
+    .test-choice { display: flex; align-items: flex-start; gap: 12px; line-height: 1.5; }
+    .test-choice input { width: 20px; height: 20px; flex: 0 0 auto; margin-top: 3px; }
+    .invitation-shell .notice { background: var(--lilac, #e4d8ff); padding: 16px; border-radius: 12px; }
+    #retry-notice { margin-top: 12px; }
+  </style>
+  <link rel="stylesheet" href="/static/personality.css?v=20261104-type-scale10">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/#/login">ENWEN</a>
+    <span class="badge">Your choice matters</span>
+  </header>
+  <main class="invitation-shell">
+    <section class="card" aria-labelledby="invitation-title">
+      <p class="eyebrow">Your choice matters</p>
+      <h1 id="invitation-title">A trusted-contact invitation.</h1>
+      <p>Your invitation, your choice. Read the delivery notice and choose whether to accept or decline. Opening this page does not accept the invitation.</p>
+      <p id="invitation-notice" class="notice">Loading the delivery notice...</p>
+      <form id="invitation-form">
+        <fieldset id="invitation-fields" disabled>
+          <legend class="eyebrow">Choose your response</legend>
+          <label class="test-choice" for="test-acknowledgement">
+            <input id="test-acknowledgement" type="checkbox" required>
+            <span>I have read and understand the delivery notice above.</span>
+          </label>
+          <div class="invitation-actions">
+            <button type="submit" name="decision" value="accepted">Accept invitation</button>
+            <button type="submit" name="decision" value="declined">Decline invitation</button>
+          </div>
+        </fieldset>
+      </form>
+      <p id="invitation-status" class="status" role="status" aria-live="polite"></p>
+      <button id="retry-notice" type="button" hidden>Retry loading notice</button>
+      <p class="small-note">This response records your choice. Your private journal is not shared with the nominated contact.</p>
+    </section>
+  </main>
+  <script>
+    "use strict";
+    const form = document.getElementById("invitation-form");
+    const fields = document.getElementById("invitation-fields");
+    const acknowledgement = document.getElementById("test-acknowledgement");
+    const status = document.getElementById("invitation-status");
+    const retry = document.getElementById("retry-notice");
+    let token = new URLSearchParams(location.hash.slice(1)).get("token") || "";
+    // Keep the secret only in memory, not localStorage, forms or the address bar.
+    history.replaceState(null, "", location.pathname);
+    let notice = null;
+    let saving = false;
+    let finished = false;
+
+    function showStatus(message, error = false) {
+      status.textContent = message;
+      status.classList.toggle("error", error);
+    }
+
+    async function request(path, body) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      try {
+        const response = await fetch(path, {
+          method: body === undefined ? "GET" : "POST",
+          headers: body === undefined
+            ? { Accept: "application/json" }
+            : { Accept: "application/json", "Content-Type": "application/json" },
+          body: body === undefined ? undefined : JSON.stringify(body),
+          cache: "no-store",
+          credentials: "omit",
+          signal: controller.signal,
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          const error = new Error(typeof data?.detail === "string"
+            ? data.detail : "The request could not be completed.");
+          error.status = response.status;
+          throw error;
+        }
+        return data;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    async function loadNotice() {
+      if (saving || finished) return;
+      if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
+        showStatus("Open the complete invitation link from your Mailpit email. If you refreshed this page, reopen that link.", true);
+        return;
+      }
+      fields.disabled = true;
+      retry.hidden = true;
+      acknowledgement.checked = false;
+      notice = null;
+      showStatus("Loading the delivery notice...");
+      try {
+        const data = await request("/trusted-contact/invitation-notice");
+        if (data?.delivery_mode !== "local_test" || typeof data.text !== "string"
+            || !data.text.trim() || typeof data.notice_version !== "string" || !data.notice_version.trim()) {
+          throw new Error("The invitation notice is unavailable.");
+        }
+        notice = data;
+        document.getElementById("invitation-notice").textContent = data.text;
+        fields.disabled = false;
+        showStatus("Read the notice, acknowledge the delivery arrangement, then choose Accept or Decline.");
+      } catch {
+        showStatus("Could not load the notice. Check that ENWEN is running, then retry.", true);
+        retry.hidden = false;
+      }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (saving || finished || !notice || !form.reportValidity()) return;
+      const decision = event.submitter?.value;
+      if (!["accepted", "declined"].includes(decision)) return;
+      saving = true;
+      fields.disabled = true;
+      showStatus("Recording your response...");
+      let changedNotice = false;
+      try {
+        const result = await request("/trusted-contact/invitations/respond", {
+          token,
+          decision,
+          notice_version: notice.notice_version,
+          test_only_acknowledged: acknowledgement.checked,
+        });
+        if (result?.delivery_mode !== "local_test" || result.decision !== decision) {
+          throw new Error("The response could not be confirmed.");
+        }
+        finished = true;
+        token = "";
+        acknowledgement.checked = false;
+        showStatus(decision === "accepted"
+          ? "Response recorded: accepted. Live safety alerts remain off."
+          : "Response recorded: declined. Live safety alerts remain off.");
+      } catch (error) {
+        if (error.status === 410) {
+          finished = true;
+          token = "";
+        }
+        changedNotice = error.status === 409;
+        showStatus(error.status
+          ? error.message
+          : "Could not confirm whether your response was saved. Check the student's contact status before trying again. Nothing was retried automatically.", true);
+      } finally {
+        saving = false;
+        fields.disabled = finished || !notice;
+      }
+      if (changedNotice) await loadNotice();
+    });
+
+    retry.addEventListener("click", () => void loadNotice());
+    void loadNotice();
+  </script>
+</body>
+</html>

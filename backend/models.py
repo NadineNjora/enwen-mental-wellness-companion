@@ -79,9 +79,10 @@ class MoodEntry(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "mood_score BETWEEN 1 AND 5",
+            "mood_score BETWEEN 1 AND scale_max",
             name="ck_mood_entries_score",
         ),
+        CheckConstraint("scale_max IN (5, 10)", name="ck_mood_entries_scale"),
     )
 
     mood_id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -89,6 +90,8 @@ class MoodEntry(Base):
         ForeignKey("users.user_id"), nullable=False, index=True
     )
     mood_score: Mapped[int] = mapped_column(nullable=False)
+    # Preserve legacy writers; the current API explicitly supplies scale_max=10.
+    scale_max: Mapped[int] = mapped_column(nullable=False, default=5, server_default="5")
     note: Mapped[str | None] = mapped_column(String(1000))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

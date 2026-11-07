@@ -1,0 +1,31 @@
+.chat-notice { padding:1rem; border-radius:18px; background:#f5effc; margin:1rem 0; }
+.chat-thread { list-style:none; padding:0; display:grid; gap:1rem; max-height:55vh; overflow-y:auto; }
+.chat-bubble { padding:1rem 1.2rem; background:#fff6eb; border:1px solid #dbcdd8; border-radius:22px 22px 22px 5px; }
+.chat-bubble.user { background:#ecf4d8; margin-left:1.5rem; border-radius:22px 22px 5px 22px; }
+.chat-bubble p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.65; }
+.chat-sources { padding:.5rem 1rem; display:grid; gap:.5rem; font-size:.9rem; }
+#chat-input { min-height:120px; width:100%; box-sizing:border-box; }
+.chat-controls { display:flex; flex-wrap:wrap; gap:1rem; margin-top:1rem; }
+#chat-fields { min-width:0; width:100%; box-sizing:border-box; padding:1.3rem; border:1px solid #dbcdd8; border-radius:20px; }
+#chat-form label { display:block; margin:1rem 0 .5rem; }
+#chat-form .chat-agreement { display:flex; align-items:flex-start; gap:.8rem; line-height:1.6; margin-bottom:1.5rem; }
+#chat-consent { flex:0 0 auto; width:20px; height:20px; margin:.2rem 0 0; }
+.chat-history-panel { padding:1.2rem; border:1px solid #dfd0dd; background:#fbf5fc; border-radius:20px; margin:1rem 0 1.5rem; }
+.chat-history-panel h3 { margin:.2rem 0 .75rem; }
+#chat-history-list { list-style:none; margin:.8rem 0; padding:0; display:grid; gap:.65rem; max-height:20rem; overflow-y:auto; }
+#chat-history-list button { width:100%; display:grid; gap:.3rem; text-align:left; padding:.9rem 1rem; border:1px solid #d8c9d8; border-radius:14px; background:#fff; color:#302337; }
+#chat-history-list button strong { overflow-wrap:anywhere; }
+#chat-history-list button small { color:#685b6c; font-weight:400; }
+#chat-history-list button[aria-current="true"] { border:2px solid #655070; background:#f1e8f8; }
+.chat-history-controls, .chat-session-controls { display:flex; flex-wrap:wrap; gap:.7rem; margin:.8rem 0; }
+.chat-history-controls button { min-height:42px; }
+#chat-active-title { color:#62506a; font-size:.95rem; font-weight:700; margin:1rem 0; overflow-wrap:anywhere; }
+.chat-turn-state { display:block; margin:.65rem 0 0; color:#73513e; line-height:1.5; }
+.chat-session-controls { padding:.75rem 0; }
+@media(min-width:1100px) {
+  #chat-history-list { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:600px) {
+  .chat-history-panel { padding:1rem; }
+  .chat-session-controls { align-items:stretch; flex-direction:column; }
+}

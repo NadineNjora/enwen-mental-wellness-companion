@@ -1,5 +1,6 @@
 from datetime import datetime
 from uuid import UUID
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,7 +18,9 @@ router = APIRouter(prefix="/moods", tags=["Mood check-ins"])
 class MoodCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    mood_score: int = Field(strict=True, ge=1, le=5)
+    mood_score: int = Field(strict=True, ge=1, le=10)
+    # Required so an old, already-open 1-5 form cannot silently save on scale 10.
+    scale_max: Literal[10]
     note: str | None = Field(default=None, max_length=1000)
 
 
@@ -26,6 +29,7 @@ class MoodResponse(BaseModel):
 
     mood_id: UUID
     mood_score: int
+    scale_max: int
     note: str | None
     created_at: datetime
 
@@ -50,6 +54,7 @@ def create_mood(
                 entry = MoodEntry(
                     user_id=current_user.user_id,
                     mood_score=data.mood_score,
+                    scale_max=data.scale_max,
                     note=data.note,
                 )
                 session.add(entry)

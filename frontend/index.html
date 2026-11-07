@@ -4,13 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ENWEN | Your wellness space</title>
+  <meta name="theme-color" content="#241c36">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ENWEN">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/icons/enwen-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/static/icons/enwen-180.png">
+  <link rel="stylesheet" href="/static/pwa.css?v=20261107">
+  <script src="/static/pwa.js?v=20261107" defer></script>
 
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/navigation.css">
 
-  <script src="/static/app.js?v=20261015-login-fix" defer></script>
-  <script src="/static/journals.js?v=20261015-login-fix" defer></script>
-  <script src="/static/navigation.js?v=20261015-login-fix" defer></script>
+  <link rel="stylesheet" href="/static/feature_updates.css?v=20261105-refine">
+
+<script src="/static/mood_chart.js?v=20261105-refine" defer></script>
+<script src="/static/app.js?v=20261106-session" defer></script>
+<script src="/static/journals.js?v=20261105-refine" defer></script>
+  <script src="/static/trusted-contact.js?v=20261105-refine" defer></script>
+  <script src="/static/contact_setup.js?v=20261105-refine" defer></script>
+  <script src="/static/resources.js?v=20261105-refine" defer></script>
+  <script src="/static/pause.js?v=20261105-refine" defer></script>
+  <script src="/static/safety_support.js?v=20261106-safety" defer></script>
+  <link rel="stylesheet" href="/static/safety_support.css?v=20261106-safety">
+  <script src="/static/chat.js?v=20261107-history-safety" defer></script>
+  <link rel="stylesheet" href="/static/chat.css?v=20261107-history-safety">
+<script src="/static/navigation.js?v=20261106-session" defer></script>
+  <script src="/static/session.js?v=20261106-session" defer></script>
+  <link rel="stylesheet" href="/static/wellness-tools.css?v=20261105-refine">
+  <link rel="stylesheet" href="/static/trusted-contact.css?v=20261105-refine">
+  <link rel="stylesheet" href="/static/prompts.css?v=20261105-refine">
+<script src="/static/student_prompts.js?v=20261105-refine" defer></script>
+<script src="/static/reflection_prompts.js?v=20261105-refine" defer></script>
+  <link rel="stylesheet" href="/static/personality.css?v=20261105-refine">
+  <link rel="stylesheet" href="/static/refinements.css?v=20261105-refine">
 </head>
 
 <body>
@@ -22,9 +49,13 @@
       <a href="#/check-in" data-route="check-in">Check-in</a>
       <a href="#/mood-history" data-route="mood-history">History</a>
       <a href="#/journal" data-route="journal">Journal</a>
+      <a href="#/chat" data-route="chat">Let's talk</a>
+      <a href="#/resources" data-route="resources">Resources</a>
+      <a href="#/pause" data-route="pause">Take a pause</a>
+      <a href="#/trusted-contact" data-route="trusted-contact">Trusted contact</a>
     </nav>
 
-    <span class="badge">Student project · Prototype</span>
+    <span id="student-badge" class="badge">Your wellness space</span>
   </header>
 
   <main class="layout">
@@ -38,10 +69,8 @@
       </p>
 
       <p class="safety-note">
-        This is a learning prototype. Use fictional information only.
-        ENWEN is not an emergency service or a replacement for
-        professional care. Kindly reach out to a trained professional
-        if you are in distress.
+        A space to pause, reflect and feel heard.
+        ENWEN supports your wellbeing alongside human and professional care.
       </p>
     </section>
 
@@ -50,8 +79,8 @@
       <!-- Login screen -->
       <div id="login-panel">
         <p class="eyebrow">Hey buddy!<br>Let's dive back in 🙋</p>
-        <h2>Log in to ENWEN</h2>
-        <p class="muted">Use the demo account you registered earlier.</p>
+        <h2>Log in to ENWEN <span aria-hidden="true">🌿</span></h2>
+        <p class="muted">A little space that knows your name.</p>
 
         <form id="login-form">
           <label for="email">Email address</label>
@@ -78,7 +107,7 @@
         </form>
         <p class="muted">
   New here?
-  <a href="/static/register.html">Create an account</a>.
+  <a href="/static/register.html?v=20261104-two-steps">Create an account</a>.
 </p>
       </div>
 
@@ -103,25 +132,99 @@
           <div class="feature-grid">
             <a class="feature-card" href="#/check-in">
               <span class="feature-number" aria-hidden="true">01</span>
-              <h3>Check in with yourself</h3>
+              <h3>Check in with yourself <span aria-hidden="true">🌤️</span></h3>
               <p>Take a moment to notice how you feel.</p>
               <span class="feature-link">Open check-in →</span>
             </a>
 
             <a class="feature-card" href="#/mood-history">
               <span class="feature-number" aria-hidden="true">02</span>
-              <h3>Look back, gently</h3>
+              <h3>Look back, gently <span aria-hidden="true">🌱</span></h3>
               <p>Revisit your recent mood check-ins.</p>
               <span class="feature-link">View history →</span>
             </a>
 
             <a class="feature-card" href="#/journal">
               <span class="feature-number" aria-hidden="true">03</span>
-              <h3>Make room for your thoughts</h3>
+              <h3>Make room for your thoughts <span aria-hidden="true">✍️</span></h3>
               <p>Write, save and revisit your thoughts.</p>
               <span class="feature-link">Open journal →</span>
             </a>
+            <a class="feature-card resource-home-card" href="#/resources">
+              <span class="feature-number" aria-hidden="true">04</span>
+              <h3>A little support <span aria-hidden="true">📚</span></h3>
+              <p>Find reading for student life and keep useful links close.</p>
+              <span class="feature-link">Explore resources →</span>
+            </a>
+            <a class="feature-card pause-home-card" href="#/pause">
+              <span class="feature-number" aria-hidden="true">05</span>
+              <h3>Come back to now <span aria-hidden="true">🍃</span></h3>
+              <p>Make a little room for a mindful moment.</p>
+              <span class="feature-link">Take a moment →</span>
+            </a>
           </div>
+          <aside class="contact-home" aria-labelledby="contact-home-title">
+            <div>
+              <p class="eyebrow">One person in your corner</p>
+              <h3 id="contact-home-title">Your trusted contact <span aria-hidden="true">🫶</span></h3>
+              <p id="contact-home-status" role="status">Loading your contact status...</p>
+              <p class="small-note">One person in your corner.</p>
+            </div>
+            <a class="contact-open" href="#/trusted-contact">View contact &amp; invitation →</a>
+          </aside>
+        </section>
+
+        <!-- TRUSTED CONTACT: a separate screen keeps the dashboard uncluttered. -->
+        <section id="page-trusted-contact" class="app-page" data-page="trusted-contact"
+          aria-labelledby="trusted-contact-title" hidden>
+          <p class="eyebrow">One person in your corner</p>
+          <h2 id="trusted-contact-title">Your trusted contact. <span aria-hidden="true">🫶</span></h2>
+          <p class="muted">Someone you trust, kept close. Add your person and review their invitation status here.</p>
+          <p class="account-note">Email delivery is currently local to this computer. Live safety alerts are not enabled.</p>
+          <div class="contact-toolbar">
+            <span id="contact-state" class="contact-state">Not loaded</span>
+            <button id="contact-refresh" type="button" disabled>Refresh status</button>
+          </div>
+          <p id="contact-message" class="status" role="status" aria-live="polite"></p>
+          <section id="contact-setup-panel" class="contact-setup-panel" aria-labelledby="contact-setup-title" hidden>
+            <h3 id="contact-setup-title">Who is in your corner? <span aria-hidden="true">🫶</span></h3>
+            <p>Add a person you trust. Saving their details does not send a message or give them access to your journal.</p>
+            <form id="contact-setup-form">
+              <fieldset id="contact-setup-fields" disabled>
+                <legend>Your trusted person</legend>
+                <div class="contact-setup-grid">
+                  <label for="setup-contact-name">Their name<input id="setup-contact-name" type="text" maxlength="100" required autocomplete="off"></label>
+                  <label for="setup-contact-relationship">Relationship<input id="setup-contact-relationship" type="text" maxlength="50" placeholder="Friend, sibling..." autocomplete="off"></label>
+                  <label for="setup-contact-email">Their email address<input id="setup-contact-email" type="email" maxlength="254" required autocomplete="off"></label>
+                </div>
+                <p id="contact-setup-notice" class="contact-notice">Loading your privacy notice...</p>
+                <label class="contact-ack" for="contact-setup-ack"><input id="contact-setup-ack" type="checkbox" required><span>I have read and accept this trusted-contact notice.</span></label>
+                <button id="contact-setup-save" type="submit">Save my trusted person</button>
+              </fieldset>
+            </form>
+            <p id="contact-setup-message" class="status" role="status" aria-live="polite"></p>
+            <button id="contact-setup-retry" type="button" hidden>Reload the notice</button>
+          </section>
+          <dl id="contact-details" class="contact-details" hidden>
+            <div><dt>Name</dt><dd id="contact-name"></dd></div>
+            <div><dt>Email</dt><dd id="contact-email"></dd></div>
+            <div><dt>Relationship</dt><dd id="contact-relationship"></dd></div>
+          </dl>
+          <p id="contact-invitation-summary" class="muted"></p>
+          <form id="contact-invite-form" hidden>
+            <fieldset id="contact-invite-fields" disabled>
+              <legend>Invite your trusted person</legend>
+              <p id="contact-test-notice" class="contact-notice"></p>
+              <p id="contact-replacement-note" class="small-note" hidden>A replacement makes the previous unused link invalid. Check Mailpit before requesting another invitation.</p>
+              <label class="contact-ack" for="contact-test-ack">
+                <input id="contact-test-ack" type="checkbox" required>
+                <span>I understand the delivery notice above and agree to this invitation.</span>
+              </label>
+              <button id="contact-send" type="submit" disabled>Prepare invitation</button>
+            </fieldset>
+          </form>
+          <p id="contact-send-message" class="status" role="status" aria-live="polite"></p>
+          <p class="small-note">After sending, open <a href="http://127.0.0.1:8025/" target="_blank" rel="noopener noreferrer">the local Mailpit inbox</a> on this computer, choose Accept or Decline in the invitation, then return and refresh the status. No mood or journal content is included.</p>
         </section>
 
         <!-- MOOD CHECK-IN -->
@@ -132,37 +235,57 @@
           aria-labelledby="mood-title"
           hidden
         >
-          <h3 id="mood-title">A little check-in.</h3>
+          <h3 id="mood-title">A little check-in. <span aria-hidden="true">🌤️</span></h3>
           <p class="muted">Every mood has a place here 😌</p>
 
           <form id="mood-form">
             <fieldset id="mood-fields" disabled>
-              <legend>How are you feeling right now?</legend>
+              <legend>How are you feeling right now? Pick a number from 1 to 10.</legend>
 
               <div class="mood-options">
                 <label class="mood-option">
                   <input type="radio" name="mood_score" value="1" required>
-                  <span>1 · Very low 😓</span>
+                  <span><b>1</b><i aria-hidden="true">😞</i>Very low</span>
                 </label>
 
                 <label class="mood-option">
                   <input type="radio" name="mood_score" value="2" required>
-                  <span>2 · Low 😕</span>
+                  <span><b>2</b><i aria-hidden="true">😔</i>Low</span>
                 </label>
 
                 <label class="mood-option">
                   <input type="radio" name="mood_score" value="3" required>
-                  <span>3 · Okay 😐</span>
+                  <span><b>3</b><i aria-hidden="true">🙁</i>Down</span>
                 </label>
 
                 <label class="mood-option">
                   <input type="radio" name="mood_score" value="4" required>
-                  <span>4 · Good 😊</span>
+                  <span><b>4</b><i aria-hidden="true">😕</i>A little low</span>
                 </label>
 
                 <label class="mood-option">
                   <input type="radio" name="mood_score" value="5" required>
-                  <span>5 · Great 😄</span>
+                  <span><b>5</b><i aria-hidden="true">😐</i>In between</span>
+                </label>
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="6" required>
+                  <span><b>6</b><i aria-hidden="true">🙂</i>Okay</span>
+                </label>
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="7" required>
+                  <span><b>7</b><i aria-hidden="true">😊</i>Pretty good</span>
+                </label>
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="8" required>
+                  <span><b>8</b><i aria-hidden="true">😌</i>Good</span>
+                </label>
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="9" required>
+                  <span><b>9</b><i aria-hidden="true">😄</i>Very good</span>
+                </label>
+                <label class="mood-option">
+                  <input type="radio" name="mood_score" value="10" required>
+                  <span><b>10</b><i aria-hidden="true">🤩</i>Great</span>
                 </label>
               </div>
 
@@ -177,8 +300,7 @@
               ></textarea>
 
               <p id="mood-note-help" class="small-note">
-                Optional · Up to 1,000 characters.
-                Use fictional examples while testing.
+                A little more room for your day · Up to 1,000 characters.
               </p>
 
               <button type="submit">Save my check-in</button>
@@ -202,14 +324,14 @@
           hidden
         >
           <div class="history-heading">
-            <h3 id="mood-history-title">Your recent check-ins</h3>
+            <h3 id="mood-history-title">Your recent check-ins <span aria-hidden="true">🌱</span></h3>
             <button id="refresh-moods" type="button" disabled>
               Refresh
             </button>
           </div>
 
           <p class="muted">
-            This section will show up to 20 recent check-ins, newest first.
+            Your full history, at a glance. Browse your dated check-ins below the charts.
           </p>
 
           <p
@@ -218,7 +340,7 @@
             role="status"
             aria-live="polite"
           >
-            The layout is ready. We will connect your saved entries next.
+            Your saved check-ins will appear here.
           </p>
 
           <ol
@@ -226,6 +348,10 @@
             class="history-list"
             aria-busy="false"
           ></ol>
+          <div class="history-pagination" aria-label="Check-in pages">
+            <button id="history-prev" type="button" disabled>← Newer entries</button>
+            <button id="history-next" type="button" disabled>Older entries →</button>
+          </div>
         </section>
 
         <!-- JOURNAL -->
@@ -262,7 +388,7 @@
               </p>
 
               <label for="journal-content">
-                A space for your thoughts... you are safe🤍?
+                A space for your thoughts... you are safe 🤍
               </label>
               <textarea
                 id="journal-content"
@@ -270,13 +396,13 @@
                 rows="8"
                 maxlength="10000"
                 aria-describedby="journal-content-help"
-                placeholder="Write a fictional entry to test your journal..."
+                placeholder="What's on your mind today?"
                 required
               ></textarea>
 
               <p id="journal-content-help" class="small-note">
                 Required · Up to 10,000 characters.
-                Use fictional information while testing this prototype.
+                Your words, at your own pace.
               </p>
 
               <button id="journal-save-button" type="submit">
@@ -332,19 +458,155 @@
           </article>
         </section>
 
+        <section id="page-resources" class="app-page" data-page="resources" aria-labelledby="resources-title" hidden>
+          <p class="eyebrow">Something to keep close</p>
+          <h2 id="resources-title">A little support, at your pace. <span aria-hidden="true">📚</span></h2>
+          <p class="muted">Explore readings from the original publishers. Save what feels useful and come back whenever you like.</p>
+          <div class="resource-intro">
+            <p>Need a moment before you read?</p>
+            <a href="#/pause">Try a mindful minute <span aria-hidden="true">🍃</span> →</a>
+          </div>
+          <form id="resources-filter-form" class="resources-filter-form">
+            <fieldset id="resources-fields" disabled>
+              <legend>Find something for today</legend>
+              <div class="resource-filters">
+                <label for="resources-search">Search the library
+                  <input id="resources-search" type="search" maxlength="100" placeholder="Try sleep, stress or university">
+                </label>
+                <label for="resources-category">Choose a topic
+                  <select id="resources-category">
+                    <option value="">All topics</option>
+                    <option value="stress">Stress &amp; grounding</option>
+                    <option value="studies">Studies &amp; deadlines</option>
+                    <option value="rest">Rest &amp; sleep</option>
+                    <option value="connection">Connection</option>
+                    <option value="human-support">Human support</option>
+                  </select>
+                </label>
+                <label class="resources-saved-choice" for="resources-saved-only">
+                  <input id="resources-saved-only" type="checkbox"> Saved by me
+                </label>
+                <button type="submit">Find resources</button>
+                <button id="resources-refresh" type="button">Refresh</button>
+              </div>
+            </fieldset>
+          </form>
+          <p id="resources-message" class="status" role="status" aria-live="polite"></p>
+          <div id="resources-list" class="resources-grid" aria-busy="false"></div>
+          <p class="small-note">These are general wellbeing readings. External pages open in another tab; their service arrangements depend on the country and institution. Your saved links are private to your ENWEN account.</p>
+        </section>
+
+        <section id="page-pause" class="app-page mindful-page" data-page="pause" aria-labelledby="pause-title" hidden>
+          <p class="eyebrow">A breath. A little room. You.</p>
+          <h2 id="pause-title">A mindful minute. <span aria-hidden="true">🌸</span></h2>
+          <p class="muted">Come back to yourself with four gentle rounds, just over a minute. Breathe in for four, hold for four, breathe out for four, then rest for four.</p>
+          <div class="breathing-garden">
+            <div class="bloom-panel">
+              <div class="bloom-stage">
+                <svg class="breathing-flower" viewBox="0 0 280 300" aria-hidden="true" focusable="false">
+                  <path d="M140 155 Q133 213 140 276" fill="none" stroke="#6e9b66" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M140 236 Q84 239 90 199 Q127 200 140 236 M138 219 Q185 217 191 177 Q154 182 138 219" fill="#c5dd95" stroke="#6e9b66" stroke-width="2"/>
+                  <g id="breath-petals">
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#ffb49e" transform="rotate(0 140 126)"/>
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#d6b9ff" transform="rotate(45 140 126)"/>
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#ffc9a8" transform="rotate(90 140 126)"/>
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#c8bdff" transform="rotate(135 140 126)"/>
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#ffb49e" transform="rotate(180 140 126)"/>
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#d6b9ff" transform="rotate(225 140 126)"/>
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#ffc9a8" transform="rotate(270 140 126)"/>
+                  <ellipse cx="140" cy="85" rx="31" ry="54" fill="#c8bdff" transform="rotate(315 140 126)"/>
+                  </g>
+                  <circle cx="140" cy="126" r="29" fill="#fff6d9" stroke="#d69b62" stroke-width="2"/>
+                  <text id="breath-count" x="140" y="136" text-anchor="middle" fill="#493151" font-size="29" font-family="Georgia, serif">4</text>
+                </svg>
+              </div>
+              <h3 id="breath-phase" role="status" aria-live="polite">A breath at a time</h3>
+              <p id="breath-round">Round 1 of 4</p>
+              <div class="breath-rhythm" aria-label="Breathing rhythm"><span>In · 4</span><span>Hold · 4</span><span>Out · 4</span><span>Rest · 4</span></div>
+              <div class="breathing-controls">
+                <p id="pause-clock" aria-label="64 seconds remaining">1:04</p>
+                <div class="pause-actions">
+                  <button id="pause-start" type="button" disabled>Begin my mindful minute</button>
+                  <button id="pause-stop" type="button" disabled>Pause</button>
+                  <button id="pause-reset" type="button">Reset</button>
+                </div>
+              </div>
+              <p id="pause-status" role="status" aria-live="polite">Four gentle rounds. Start when you feel ready.</p>
+              <label class="still-flower-choice"><input id="breath-still" type="checkbox"> Keep the flower still</label>
+            </div>
+            <aside class="affirmation-garden" aria-labelledby="affirmation-title">
+              <span class="affirmation-spark" aria-hidden="true">✧</span>
+              <p class="eyebrow">A thought to breathe with</p>
+              <h3 id="affirmation-title">A softer voice, just for you.</h3>
+              <p id="breath-affirmation">I welcome a little peace.</p>
+              <p>Let the words meet you where you are. You do not have to feel a certain way.</p>
+              <p class="breath-comfort">Keep your breath easy. Skip the holds or return to natural breathing if anything feels uncomfortable.</p>
+            </aside>
+          </div>
+          <section class="grounding-garden" aria-labelledby="grounding-title">
+            <p class="eyebrow">Feet here. Mind here. A little closer to you.</p>
+            <h3 id="grounding-title">Come back to your senses. <span aria-hidden="true">🍃</span></h3>
+            <div class="body-grounding"><h4>Notice your support</h4><p>If comfortable, feel the floor beneath your feet or the chair supporting you. Let your jaw unclench and your shoulders soften.</p></div>
+            <h4>Look around, gently</h4>
+            <p>Notice each sense in your own time. Check one off when you have spent a moment with it.</p>
+            <div class="senses-grid">
+              <label><input type="checkbox" data-grounding-check><span><b>5</b> things you can see <i aria-hidden="true">👀</i></span></label>
+              <label><input type="checkbox" data-grounding-check><span><b>4</b> things you can feel <i aria-hidden="true">🖐️</i></span></label>
+              <label><input type="checkbox" data-grounding-check><span><b>3</b> things you can hear <i aria-hidden="true">🎵</i></span></label>
+              <label><input type="checkbox" data-grounding-check><span><b>2</b> things you can smell <i aria-hidden="true">🌷</i></span></label>
+              <label><input type="checkbox" data-grounding-check><span><b>1</b> thing you can taste <i aria-hidden="true">☕</i></span></label>
+            </div>
+            <p class="muted">If a sense is not available to you, use another or think of something familiar.</p>
+            <div class="next-small-step"><h4>Choose your next small step <span aria-hidden="true">☀️</span></h4><p>A sip of water, a stretch, a thought in your journal, or a message to someone you trust. What would feel kind right now?</p></div>
+          </section>
+          <p class="small-note">Read more about <a href="https://www.southtees.nhs.uk/resources/brief-techniques-to-manage-anxiety/" target="_blank" rel="noopener noreferrer">box breathing</a> and <a href="https://www.nhsinform.scot/healthy-living/mental-wellbeing/breathing-and-relaxation-exercises/grounding-exercises" target="_blank" rel="noopener noreferrer">five-senses grounding</a>.</p>
+          <div class="pause-next"><a href="#/journal">Make room for a thought ✍️</a><a href="#/resources">Explore the resource library →</a></div>
+        </section>
+
+        <section id="page-chat" class="app-page" data-page="chat" aria-labelledby="chat-title" hidden>
+          <p class="eyebrow">A thought. A little company. A place to begin.</p>
+          <h2 id="chat-title">Let's talk, at your pace. <span aria-hidden="true">🌼</span></h2>
+          <p>A conversational space for reflection. For immediate danger, seek urgent human help rather than waiting for a reply.</p>
+          <section class="chat-history-panel" aria-label="Your saved conversations">
+            <h3>Your conversations</h3>
+            <p id="chat-history-message" role="status"></p>
+            <ul id="chat-history-list"></ul>
+            <div class="chat-controls"><button id="chat-history-prev" type="button" disabled>Newer conversations</button><button id="chat-history-next" type="button" disabled>Older conversations</button><button id="chat-history-refresh" type="button">Refresh history</button></div>
+          </section>
+          <div class="chat-controls"><button id="chat-clear" type="button">New conversation</button><button id="chat-support" type="button">Get human support now</button></div>
+          <p id="chat-active-title" class="small-note">New conversation</p>
+          <div class="chat-notice"><p id="chat-notice"></p></div>
+          <ol id="chat-messages" class="chat-thread" aria-label="Your conversation" aria-live="polite"></ol>
+          <form id="chat-form">
+            <fieldset id="chat-fields" disabled>
+              <legend>A little room to talk</legend>
+              <label class="chat-agreement"><input id="chat-consent" type="checkbox"><span id="chat-consent-label">Read the AI processing notice before sending.</span></label>
+              <label for="chat-input">What's on your mind?</label>
+              <textarea id="chat-input" maxlength="2000" required placeholder="University has felt a bit overwhelming lately..."></textarea>
+              <div class="chat-controls"><button type="submit">Send my message 🌿</button></div>
+            </fieldset>
+          </form>
+          <p id="chat-status" role="status" class="status"></p>
+          <p class="small-note">Your conversations are saved privately to your account. Logging out clears them from this screen. <a href="#/resources">Find human support</a> · <a href="#/pause">Take a mindful pause</a></p>
+        </section>
         <button id="logout-button" type="button">
-          Log out of this page
+          Log out
         </button>
       </div>
 
       <p id="status" class="status" role="status" aria-live="polite"></p>
 
       <p class="small-note">
-        For this first version, refreshing the page logs you out.
+        Your login stays connected when you refresh. Log out when using a shared device.
       </p>
     </section>
   </main>
 
+  <aside class="install-panel" aria-label="Install ENWEN">
+    <div><strong>A little space, always close 🌼</strong><p id="install-status" role="status">Add ENWEN to your device from a supporting browser.</p></div>
+    <button id="install-enwen" type="button">Install ENWEN</button>
+    <div id="install-help" hidden>In Chrome or Edge, open the browser menu and choose Install app or Install ENWEN. On iPhone or iPad, open this site in Safari, choose Share, then Add to Home Screen. Installation options depend on your browser. On a phone, use the deployed HTTPS website; this computer's 127.0.0.1 address is local to this computer. Installation does not make the backend or AI run on your phone.</div>
+  </aside>
   <footer>ENWEN · Built one thoughtful step at a time.</footer>
 </body>
 </html>

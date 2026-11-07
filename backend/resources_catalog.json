@@ -1,0 +1,132 @@
+[
+  {
+    "resource_id": "who-stress-guide",
+    "title": "Doing What Matters in Times of Stress",
+    "publisher": "World Health Organization",
+    "category": "stress",
+    "summary": "An illustrated guide with practical exercises for noticing difficult feelings and reconnecting with the present.",
+    "url": "https://www.who.int/publications/i/item/9789240003927",
+    "audience_note": "General reading. The publisher provides the full guide and accompanying exercises.",
+    "source_checked_on": "2026-11-04"
+  },
+  {
+    "resource_id": "nhs-student-stress",
+    "title": "Making sense of student stress",
+    "publisher": "NHS",
+    "category": "studies",
+    "summary": "Reading about coursework, exams, money worries and the changes that come with university life.",
+    "url": "https://www.nhs.uk/mental-health/children-and-young-adults/help-for-teenagers-young-adults-and-students/student-stress-self-help-tips/",
+    "audience_note": "UK wellbeing information. UK service instructions do not describe Kenyan services.",
+    "source_checked_on": "2026-11-04"
+  },
+  {
+    "resource_id": "nhs-sleep",
+    "title": "Making room for rest",
+    "publisher": "NHS Every Mind Matters",
+    "category": "rest",
+    "summary": "Explore sleep habits and routines in the publisher's guide to falling asleep and sleeping better.",
+    "url": "https://www.nhs.uk/every-mind-matters/mental-wellbeing-tips/how-to-fall-asleep-faster-and-sleep-better/",
+    "audience_note": "UK wellbeing information. For local care, speak with your own university or healthcare provider.",
+    "source_checked_on": "2026-11-04"
+  },
+  {
+    "resource_id": "nhs-connection",
+    "title": "When university feels lonely",
+    "publisher": "NHS Every Mind Matters",
+    "category": "connection",
+    "summary": "Reading about loneliness, life changes and ways of finding connection with other people.",
+    "url": "https://www.nhs.uk/every-mind-matters/lifes-challenges/loneliness/",
+    "audience_note": "UK wellbeing information. Local organisations and services will differ.",
+    "source_checked_on": "2026-11-04"
+  },
+  {
+    "resource_id": "uon-student-counselling",
+    "title": "Finding human support on campus",
+    "publisher": "University of Nairobi",
+    "category": "human-support",
+    "summary": "The university's own information about its guidance, counselling and student support services.",
+    "url": "https://studentlife.uonbi.ac.ke/student-services/guidance-and-counseling-section",
+    "audience_note": "For University of Nairobi students; eligibility and availability are set by that university. Elsewhere, contact your own student affairs office.",
+    "source_checked_on": "2026-11-04"
+  },
+  {
+    "resource_id": "strathmore-wellness",
+    "title": "Mental wellness at Strathmore",
+    "publisher": "Strathmore University Medical Centre",
+    "category": "human-support",
+    "summary": "The university medical centre's information about its mental wellness and counselling services.",
+    "url": "https://sumc.strathmore.edu/mental-wellness/",
+    "audience_note": "Check directly with the centre about appointments, fees and access to services.",
+    "source_checked_on": "2026-11-05"
+  },
+  {
+    "resource_id": "daystar-care",
+    "title": "Daystar Compassion and Care Centre",
+    "publisher": "Daystar University",
+    "category": "human-support",
+    "summary": "Student counselling, psychosocial support and community programmes described by Daystar's own care centre.",
+    "url": "https://www.daystar.ac.ke/dccc.html",
+    "audience_note": "University services and eligibility depend on your campus. Ask the centre about current arrangements.",
+    "source_checked_on": "2026-11-05"
+  },
+  {
+    "resource_id": "kindred-collective",
+    "title": "Find your fit with Kindred Collective",
+    "publisher": "Kindred Collective",
+    "category": "human-support",
+    "summary": "Explore the practice's therapy approaches, therapist matching and session information at its own website.",
+    "url": "https://www.kindredcollectivetherapy.com/",
+    "audience_note": "Independent therapy practice. Confirm therapist credentials, fees and availability directly before booking.",
+    "source_checked_on": "2026-11-05"
+  },
+  {
+    "resource_id": "befrienders-kenya",
+    "title": "A listening ear in Kenya",
+    "publisher": "Befrienders Kenya",
+    "category": "human-support",
+    "summary": "Information from Befrienders Kenya about its emotional-support services and how to reach its team.",
+    "url": "https://www.facebook.com/befrienderskenya/?oai_link_source=model_response_hotline",
+    "audience_note": "The organisation's verified support page opens on Facebook. Check its current service availability directly.",
+    "source_checked_on": "2026-11-05"
+  },
+  {
+    "resource_id": "usiu-wellbeing",
+    "title": "Counselling and wellbeing at USIU-Africa",
+    "publisher": "USIU-Africa",
+    "category": "human-support",
+    "summary": "The university's counselling centre introduces support for academic, social and personal challenges.",
+    "url": "https://counselling.usiu.ac.ke/",
+    "audience_note": "University service; check eligibility and appointment arrangements with USIU-Africa.",
+    "source_checked_on": "2026-11-05"
+  },
+  {
+    "resource_id": "mku-counselling",
+    "title": "Student support at Mount Kenya University",
+    "publisher": "Mount Kenya University",
+    "category": "human-support",
+    "summary": "Read about the university's counselling services and the support available to students and staff.",
+    "url": "https://counseling.mku.ac.ke/",
+    "audience_note": "University service; confirm current access and appointments with the counselling centre.",
+    "source_checked_on": "2026-11-05"
+  },
+  {
+    "resource_id": "nhs-grounding",
+    "title": "Come back to your senses",
+    "publisher": "NHS inform",
+    "category": "stress",
+    "summary": "A guide to grounding, including a five-senses activity you can practise at your own pace.",
+    "url": "https://www.nhsinform.scot/healthy-living/mental-wellbeing/breathing-and-relaxation-exercises/grounding-exercises",
+    "audience_note": "General wellbeing reading from Scotland. Local healthcare arrangements differ in Kenya.",
+    "source_checked_on": "2026-11-05"
+  },
+  {
+    "resource_id": "nhs-breathing",
+    "title": "Make room for a calmer breath",
+    "publisher": "NHS",
+    "category": "stress",
+    "summary": "The publisher's gentle breathing guidance, including finding a comfortable position and an unforced rhythm.",
+    "url": "https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/breathing-exercises-for-stress/",
+    "audience_note": "Practise comfortably. You can return to natural breathing or stop if an exercise feels uncomfortable.",
+    "source_checked_on": "2026-11-05"
+  }
+]

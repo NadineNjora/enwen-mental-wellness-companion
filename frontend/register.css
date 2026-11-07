@@ -1,0 +1,88 @@
+/* Registration-only layout: shared ENWEN pages keep their existing styles. */
+.registration-page .site-header { max-width: 1120px; padding: 24px 28px; }
+.registration-page .account-link { color: var(--ink); font-weight: 700; text-underline-offset: 4px; }
+.header-login { font-size: 14px; }
+.registration-shell {
+  display: grid;
+  grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr);
+  max-width: 1064px;
+  margin: 4px auto 20px;
+  border: 2px solid var(--ink);
+  border-radius: 26px;
+  background: white;
+  box-shadow: 6px 6px 0 var(--ink);
+  overflow: hidden;
+}
+.registration-intro {
+  padding: 38px 32px 26px;
+  background: var(--coral);
+  border-right: 2px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.registration-tag { font-size: 12px; font-weight: 650; padding: 8px 12px; border: 1px solid var(--ink); border-radius: 30px; background: #fff8ee70; }
+.registration-intro h1 { font-size: clamp(38px, 4.2vw, 54px); margin: 24px 0 16px; line-height: 1.07; }
+.registration-intro-copy { font-size: 16px; line-height: 1.6; margin: 0; max-width: 28ch; }
+.registration-flower { align-self: center; text-align: center; margin: auto 0; padding: 12px 0; }
+.registration-flower svg { display: block; width: 150px; height: 130px; margin: auto; }
+.registration-flower span { font-size: 12px; font-weight: 650; }
+.registration-safety { font-size: 12px; line-height: 1.55; margin: 18px 0 0; max-width: 36ch; }
+.registration-card { padding: 28px 32px 20px; min-width: 0; }
+.registration-steps { list-style: none; display: flex; gap: 16px; padding: 0; margin: 0 0 24px; font-size: 12px; font-weight: 650; }
+.registration-steps li { display: flex; gap: 8px; align-items: center; color: #615866; }
+.registration-steps span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #f1edf3; border: 1px solid #d8cedd; }
+.registration-steps [aria-current="step"] { color: var(--ink); }
+.registration-steps [aria-current="step"] span { background: var(--ink); color: white; border-color: var(--ink); }
+.registration-steps .step-complete span { background: var(--lime); border-color: var(--ink); color: var(--ink); }
+.registration-card .eyebrow { font-size: 10px; margin: 0 0 8px; }
+.registration-card h2 { font-size: clamp(25px, 3vw, 32px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.8px; }
+.registration-description { margin: 0; font-size: 14px; color: #514359; line-height: 1.5; }
+#register-form { display: block; margin-top: 22px; }
+#register-fields { border: 0; margin: 0; padding: 0; min-width: 0; }
+.registration-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.registration-field { min-width: 0; }
+.registration-field.full-width { grid-column: 1 / -1; }
+.registration-field label { display: block; font-size: 12px; margin: 0 0 7px; }
+.registration-field input { height: 44px; padding: 10px 12px; margin: 0; font-size: 14px; background: #fffdf9; border: 1px solid #b9aebf; }
+.registration-field input::placeholder { color: #796d80; opacity: 1; }
+.optional { font-weight: 400; color: #514359; }
+.field-hint { font-size: 11px; color: #615866; line-height: 1.5; margin: 9px 0 15px; }
+.registration-notice { padding: 13px 15px; background: #f2edfc; border-radius: 12px; margin: 0 0 14px; }
+.registration-notice h3 { font-size: 12px; margin: 0 0 5px; }
+.registration-notice p { font-size: 11.5px; line-height: 1.55; margin: 0; }
+.registration-notice .notice-version { font-size: 10px; color: #615866; margin-top: 5px; }
+.consent-choice { display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; font-size: 12px; margin: 0 0 18px; cursor: pointer; }
+.consent-choice input { width: 18px; height: 18px; padding: 0; margin: 0; flex: 0 0 auto; accent-color: var(--ink); }
+.registration-actions { display: flex; gap: 10px; }
+.registration-actions button { font-size: 13px; min-height: 44px; padding: 11px 14px; }
+#register-button { flex: 1; }
+.registration-page .secondary-button { background: white; color: var(--ink); border: 1px solid #b9aebf; font-size: 12px; }
+.registration-page .secondary-button:hover { background: var(--lilac); }
+.registration-footnote { text-align: center; font-size: 11px; margin: 10px 0 0; color: #615866; }
+.registration-card .status { min-height: 0; font-size: 12px; margin: 10px 0 0; line-height: 1.5; }
+.account-review { font-size: 12px; line-height: 1.5; margin: 0 0 15px; overflow-wrap: anywhere; }
+#edit-account { padding: 0; min-height: 28px; font-size: inherit; border: 0; border-radius: 0; background: transparent; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.success-mark { display: grid; place-items: center; width: 64px; height: 64px; font-size: 30px; margin: 32px 0 20px; background: var(--lime); border: 2px solid var(--ink); border-radius: 50%; }
+.login-action { display: inline-block; margin: 12px 0; padding: 14px 20px; border-radius: 12px; background: var(--lilac); }
+.registration-page footer { padding: 12px 20px 20px; font-size: 11px; }
+@media (max-width: 1120px) {
+  .registration-shell { margin-left: 28px; margin-right: 28px; }
+}
+@media (max-width: 760px) {
+  .registration-page .site-header { padding: 20px; }
+  .registration-shell { grid-template-columns: 1fr; margin: 0 20px 20px; box-shadow: 4px 4px 0 var(--ink); border-radius: 20px; }
+  .registration-intro { padding: 20px 24px; border-right: 0; border-bottom: 2px solid var(--ink); }
+  .registration-tag { padding: 0; border: 0; background: none; font-size: 11px; }
+  .registration-intro h1 { font-size: 31px; margin: 10px 0 8px; letter-spacing: -1px; }
+  .registration-intro h1 br { display: none; }
+  .registration-intro-copy { font-size: 13px; max-width: none; }
+  .registration-flower { display: none; }
+  .registration-safety { font-size: 11px; max-width: none; margin-top: 12px; }
+  .registration-card { padding: 24px; }
+  .registration-steps { gap: 12px; margin-bottom: 22px; font-size: 11px; }
+  .registration-grid { grid-template-columns: 1fr; gap: 14px; }
+  .registration-field input { font-size: 16px; }
+  .header-login { font-size: 12px; }
+}

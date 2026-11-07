@@ -4,6 +4,12 @@ from database import engine
 from models import Base
 from journal_models import JournalEntry
 from trusted_contact_models import TrustedContact
+from contact_invitation_models import TrustedContactInvitation
+from resource_models import ResourceBookmark, WellnessResource
+from init_resources import create_resources
+from auth_session_models import BrowserSession
+from chat_history_models import ChatConversation, ChatTurn
+from safety_models import SafetyAlert
 
 
 def create_tables():
@@ -13,10 +19,17 @@ def create_tables():
 
     expected_tables = (
         "users",
+        "browser_sessions",
+        "chat_conversations",
+        "chat_turns",
+        "safety_alerts",
         "consents",
         "mood_entries",
         "journal_entries",
         "trusted_contacts",
+        "trusted_contact_invitations",
+        "wellness_resources",
+        "resource_bookmarks",
     )
 
     for name in expected_tables:
@@ -24,6 +37,7 @@ def create_tables():
             raise RuntimeError(f"Table was not found: {name}")
 
         print(f"Confirmed table: {name}")
+    create_resources()
 
 
 if __name__ == "__main__":

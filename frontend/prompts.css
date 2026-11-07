@@ -1,0 +1,29 @@
+.enwen-prompts {
+  margin: 24px 0 30px;
+  padding: 22px;
+  border: 1px solid #d8cedd;
+  border-radius: 18px;
+  background: #faf6ff;
+}
+.enwen-prompts h4 { margin: 0 0 10px; font-size: 18px; line-height: 1.4; }
+.enwen-prompts > p { color: #514359; font-size: 14px; line-height: 1.7; }
+.enwen-prompt-options { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.enwen-prompt-options button {
+  background: #fff;
+  border: 1px solid #b4a8bd;
+  border-radius: 999px;
+  color: #241c36;
+  padding: 11px 17px;
+  min-height: 44px;
+  font-size: 14px;
+  text-align: left;
+}
+.enwen-prompt-options button:hover { background: #e4d8ff; border-color: #6553c9; }
+.enwen-prompt-options button:focus-visible { outline: 3px solid #6553c9; outline-offset: 3px; }
+.enwen-prompt-message { margin: 16px 0 0; }
+.enwen-prompt-message:empty { display: none; }
+@media (max-width: 480px) {
+  .enwen-prompts { padding: 18px; }
+  .enwen-prompt-options { gap: 10px; }
+  .enwen-prompt-options button { flex: 1 1 calc(50% - 10px); }
+}

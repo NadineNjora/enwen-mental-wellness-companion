@@ -9,11 +9,78 @@ const retry = byId("reload-notices");
 const loginLink = byId("registration-login-link");
 const wellnessCheck = byId("register-consent");
 const contactCheck = byId("contact-consent");
+const backButton = byId("register-back");
+const editButton = byId("edit-account");
+const checkLoginLink = byId("registration-check-login");
 
 let notices = null;
 let saving = false;
 let loading = false;
 let completed = false;
+let currentStep = 1;
+
+function showStep(step, { focus = true } = {}) {
+  currentStep = step;
+  byId("account-step").hidden = step !== 1;
+  byId("contact-step").hidden = step !== 2;
+  backButton.hidden = step === 1;
+  button.textContent = step === 1 ? "Continue to trusted person →" : "Create my account";
+  byId("register-heading").textContent = step === 1 ? "Create your account" : "Your trusted person";
+  byId("register-eyebrow").textContent = step === 1
+    ? "Let’s make room for you · Step 1 of 2" : "One person in your corner · Step 2 of 2";
+  byId("register-step-description").textContent = step === 1
+    ? "A few details to make this space yours."
+    : "Someone you trust. One person in your corner.";
+  byId("register-account-summary").textContent = byId("register-name").value.trim();
+  for (const [number, id] of [[1, "account-step-indicator"], [2, "contact-step-indicator"]]) {
+    const indicator = byId(id);
+    if (number === step) indicator.setAttribute("aria-current", "step");
+    else indicator.removeAttribute("aria-current");
+    indicator.classList.toggle("step-complete", number < step);
+  }
+  if (focus) {
+    byId("register-heading").focus({ preventScroll: true });
+    byId("register-heading").scrollIntoView({ behavior: "auto", block: "nearest" });
+  }
+}
+
+function invalidField(step, id, text) {
+  if (currentStep !== step) showStep(step, { focus: false });
+  showMessage(text, true);
+  byId(id).focus();
+  return false;
+}
+
+function validateStep(step) {
+  const ids = step === 1
+    ? ["register-name", "register-email", "register-password", "register-confirm-password", "register-consent"]
+    : ["contact-name", "contact-relationship", "contact-email", "contact-consent"];
+  for (const id of ids) {
+    const input = byId(id);
+    if (!input.checkValidity()) {
+      if (currentStep !== step) showStep(step, { focus: false });
+      showMessage("Please complete the highlighted field before continuing.", true);
+      input.reportValidity();
+      return false;
+    }
+  }
+  const nameId = step === 1 ? "register-name" : "contact-name";
+  if (!byId(nameId).value.trim() || byId(nameId).value.includes("\0")) {
+    return invalidField(step, nameId, "Enter a name using non-blank text without null characters.");
+  }
+  if (step === 1 && byId("register-password").value !== byId("register-confirm-password").value) {
+    return invalidField(1, "register-confirm-password", "Your passwords do not match. Please check them.");
+  }
+  if (step === 2) {
+    if (byId("contact-relationship").value.includes("\0")) {
+      return invalidField(2, "contact-relationship", "The relationship must not include null characters.");
+    }
+    if (byId("register-email").value.trim().toLowerCase() === byId("contact-email").value.trim().toLowerCase()) {
+      return invalidField(2, "contact-email", "Your trusted contact needs a different email from yours.");
+    }
+  }
+  return true;
+}
 
 function showMessage(text, error = false) {
   message.textContent = text;
@@ -117,13 +184,13 @@ async function loadNotices() {
     fields.disabled = false;
     retry.hidden = true;
 
-    showMessage("Read both notices before creating your test account.");
+    showMessage("");
     return true;
   } catch {
     retry.hidden = false;
 
     showMessage(
-      "We could not load both test notices. Check that the updated backend is running, then retry.",
+      "We could not load the current privacy notices. Please try again.",
       true
     );
 
@@ -144,53 +211,21 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (!form.reportValidity()) return;
+  if (!validateStep(1)) return;
+  if (currentStep === 1) {
+    showStep(2);
+    showMessage("");
+    return;
+  }
+  if (!validateStep(2)) return;
 
   const name = byId("register-name").value.trim();
   const email = byId("register-email").value.trim();
   const password = byId("register-password").value;
-  const confirmation = byId("register-confirm-password").value;
 
   const contactName = byId("contact-name").value.trim();
   const relationship = byId("contact-relationship").value.trim();
   const contactEmail = byId("contact-email").value.trim();
-
-  if (
-    !name
-    || !contactName
-    || [name, contactName, relationship].some(
-      value => value.includes("\0")
-    )
-  ) {
-    showMessage(
-      "Enter both names using non-blank text without null characters.",
-      true
-    );
-    return;
-  }
-
-  if (password !== confirmation) {
-    showMessage("Your passwords do not match. Please check them.", true);
-    byId("register-confirm-password").focus();
-    return;
-  }
-
-  if (email.toLowerCase() === contactEmail.toLowerCase()) {
-    showMessage(
-      "Your trusted contact needs a different email from yours.",
-      true
-    );
-    byId("contact-email").focus();
-    return;
-  }
-
-  if (!wellnessCheck.checked || !contactCheck.checked) {
-    showMessage(
-      "Read and accept both notices before continuing.",
-      true
-    );
-    return;
-  }
 
   const payload = {
     email,
@@ -212,8 +247,9 @@ form.addEventListener("submit", async (event) => {
   retry.disabled = true;
   button.textContent = "Creating your account...";
   loginLink.hidden = true;
+  checkLoginLink.hidden = true;
 
-  showMessage("Saving your test account and nominated contact...");
+  showMessage("Saving your account and trusted person...");
 
   let refreshNotices = false;
 
@@ -237,6 +273,16 @@ form.addEventListener("submit", async (event) => {
     form.hidden = true;
     retry.hidden = true;
     loginLink.hidden = false;
+    checkLoginLink.hidden = true;
+    byId("registration-success").hidden = false;
+    byId("registration-save-note").hidden = true;
+    byId("register-heading").textContent = "You’ve made room for yourself.";
+    byId("register-eyebrow").textContent = "Both steps complete";
+    byId("register-step-description").textContent = "Your ENWEN account is ready.";
+    for (const id of ["account-step-indicator", "contact-step-indicator"]) {
+      byId(id).removeAttribute("aria-current");
+      byId(id).classList.add("step-complete");
+    }
 
     showMessage(
       "Account created. Your trusted contact is pending confirmation; no email was sent. You can now log in."
@@ -248,7 +294,7 @@ form.addEventListener("submit", async (event) => {
       error.status === 409 && /notice/i.test(error.message);
 
     if (!error.status || error.status >= 500) {
-      loginLink.hidden = false;
+      checkLoginLink.hidden = false;
 
       showMessage(
         "We could not confirm whether your account was saved. Try logging in before submitting again. Nothing will be retried automatically.",
@@ -256,19 +302,19 @@ form.addEventListener("submit", async (event) => {
       );
     } else {
       if (error.status === 409 && !refreshNotices) {
-        loginLink.hidden = false;
+        checkLoginLink.hidden = false;
       }
 
       showMessage(error.message, true);
     }
   } finally {
     saving = false;
-    button.textContent = "Create my account";
     fields.disabled = completed || !notices;
     retry.disabled = false;
 
     byId("register-password").value = "";
     byId("register-confirm-password").value = "";
+    if (!completed) showStep(1, { focus: false });
   }
 
   if (refreshNotices && await loadNotices()) {
@@ -280,9 +326,21 @@ form.addEventListener("submit", async (event) => {
 });
 
 retry.addEventListener("click", () => void loadNotices());
-
-window.addEventListener("pageshow", (event) => {
-  if (event.persisted) void loadNotices();
+backButton.addEventListener("click", () => {
+  if (!saving && !completed) { showStep(1); showMessage(""); }
+});
+editButton.addEventListener("click", () => {
+  if (!saving && !completed) { showStep(1); showMessage(""); }
 });
 
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted && !completed) {
+    byId("register-password").value = "";
+    byId("register-confirm-password").value = "";
+    showStep(1, { focus: false });
+    void loadNotices();
+  }
+});
+
+showStep(1, { focus: false });
 void loadNotices();

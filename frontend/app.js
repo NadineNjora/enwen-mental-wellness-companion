@@ -14,6 +14,9 @@ const consentStatus = document.querySelector("#consent-status");
 
 let accessToken = null;
 let expiryTimer = null;
+let authGeneration = 0;
+let renewalTimer = null;
+let renewalRequest = null;
 
 function showStatus(message, isError = false) {
   statusMessage.textContent = message;
@@ -21,7 +24,13 @@ function showStatus(message, isError = false) {
 }
 
 function endSession(message = "You are logged out of this page.") {
+  authGeneration++;
+  clearTimeout(renewalTimer);
   resetMoodPanel();
+  resetTrustedContactPanel();
+  window.enwenResources?.reset();
+  window.enwenPause?.reset();
+  window.enwenChat?.reset();
 
   accessToken = null;
   clearTimeout(expiryTimer);
@@ -31,6 +40,7 @@ function endSession(message = "You are logged out of this page.") {
   welcomeTitle.textContent = "";
   accountEmail.textContent = "";
   consentStatus.textContent = "";
+  document.querySelector("#student-badge").textContent = "Your wellness space";
 
   accountPanel.hidden = true;
   loginPanel.hidden = false;
@@ -123,19 +133,14 @@ loginForm.addEventListener("submit", async (event) => {
       throw new Error("Login did not return a token.");
     }
 
-    accessToken = login.access_token;
-
-    clearTimeout(expiryTimer);
-    expiryTimer = setTimeout(
-      () => endSession("Your session expired. Please log in again."),
-      login.expires_in * 1000
-    );
+    installAccessToken(login);
 
     const user = await apiRequest("/auth/me");
     if (!accessToken) return;
 
     welcomeTitle.textContent =
       `Welcome, ${user.display_name || "student"}!`;
+    document.querySelector("#student-badge").textContent = user.display_name || "Your wellness space";
 
     accountEmail.textContent = user.email;
 
@@ -148,6 +153,10 @@ loginForm.addEventListener("submit", async (event) => {
 
     setupMoodPanel(user);
     setupJournalPanel(user);
+    setupTrustedContactPanel();
+    window.enwenResources?.setup(user);
+    window.enwenPause?.setup(user);
+    void window.enwenChat?.setup(user);
 
     showStatus("Login successful. Your account is connected.");
     renderPage();
@@ -161,10 +170,76 @@ loginForm.addEventListener("submit", async (event) => {
   }
 });
 
-// Log out.
-document.querySelector("#logout-button").addEventListener("click", () => {
-  endSession();
+// Revoke the saved cookie session before clearing the signed-in screen.
+document.querySelector("#logout-button").addEventListener("click", async () => {
+  const button = document.querySelector("#logout-button");
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    await apiRequest("/auth/logout", {method: "POST"});
+    endSession("You are logged out.");
+  } catch (error) {
+    showStatus("Logout could not be confirmed. Check your connection and try again.", true);
+  } finally { button.disabled = false; }
 });
+
+function installAccessToken(login) {
+  if (!login?.access_token || !(login.expires_in > 0)) throw new Error("Invalid session response.");
+  accessToken = login.access_token;
+  clearTimeout(expiryTimer); clearTimeout(renewalTimer);
+  expiryTimer = setTimeout(async () => {
+    if (!await renewSavedSession() && accessToken) endSession("Your session expired. Please log in again.");
+  }, login.expires_in * 1000);
+  renewalTimer = setTimeout(() => void renewSavedSession(), Math.max(1000, login.expires_in * 1000 - 60000));
+}
+
+async function renewSavedSession() {
+  if (renewalRequest) return renewalRequest;
+  const generation = authGeneration;
+  renewalRequest = (async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch("/auth/session", {method:"POST", credentials:"same-origin", cache:"no-store", signal:controller.signal});
+      if (generation !== authGeneration) return false;
+      if (response.status === 401) { if (accessToken) endSession("Your saved session expired. Please log in again."); return false; }
+      if (!response.ok) throw new Error("Saved login is temporarily unavailable.");
+      const login = await response.json();
+      if (generation !== authGeneration) return false;
+      installAccessToken(login);
+      return true;
+    } catch (error) {
+      if (generation === authGeneration) {
+        showStatus("Could not restore your saved login. Check your connection or log in again.", true);
+        if (accessToken) renewalTimer = setTimeout(() => void renewSavedSession(), 10000);
+      }
+      return false;
+    } finally { clearTimeout(timeout); renewalRequest = null; }
+  })();
+  return renewalRequest;
+}
+
+async function restoreSavedLogin() {
+  loginButton.disabled = true;
+  const generation = authGeneration;
+  try {
+    if (!await renewSavedSession() || generation !== authGeneration) return;
+    const user = await apiRequest("/auth/me");
+    if (!accessToken || generation !== authGeneration) return;
+    welcomeTitle.textContent = `Welcome, ${user.display_name || "student"}!`;
+    document.querySelector("#student-badge").textContent = user.display_name || "Your wellness space";
+    accountEmail.textContent = user.email;
+    consentStatus.textContent = user.wellness_consent_current ? "Your current wellness consent is recorded." : "Current wellness consent is needed before using wellness features.";
+    loginPanel.hidden = true; accountPanel.hidden = false;
+    setupMoodPanel(user); setupJournalPanel(user); setupTrustedContactPanel();
+    window.enwenResources?.setup(user); window.enwenPause?.setup(user);
+    void window.enwenChat?.setup(user);
+    showStatus("Welcome back. Your saved login is connected.");
+    renderPage({focus:false});
+  } catch (error) {
+    if (generation === authGeneration) endSession("Could not load your account. Please try logging in again.");
+  } finally { loginButton.disabled = false; }
+}
 
 // Mood check-in elements.
 const moodForm = document.querySelector("#mood-form");
@@ -220,6 +295,7 @@ moodForm.addEventListener("submit", async (event) => {
 
   const payload = {
     mood_score: Number(choice.value),
+    scale_max: 10,
     note: moodNote.value.trim() || null,
   };
 
@@ -295,153 +371,95 @@ moodForm.addEventListener("submit", async (event) => {
   }
 });
 
-// Recent mood history.
+// Complete history for the charts; the dated list is shown 20 entries at a time.
 const historyList = document.querySelector("#mood-history-list");
 const historyMessage = document.querySelector("#mood-history-message");
 const historyRefresh = document.querySelector("#refresh-moods");
-
-const moodNames = ["", "Very low", "Low", "Okay", "Good", "Great"];
-
-let historyRequest = 0;
-let historyController = null;
+const historyPrev = document.querySelector("#history-prev");
+const historyNext = document.querySelector("#history-next");
+const moodNames = ["", "Very low 😞", "Low 😔", "Down 🙁", "A little low 😕", "In between 😐", "Okay 🙂", "Pretty good 😊", "Good 😌", "Very good 😄", "Great 🤩"];
+const legacyMoodNames = ["", "Very low", "Low", "Okay", "Good", "Great"];
+let historyRequest = 0, historyController = null, historyEntries = [], historyOffset = 0;
 
 function clearMoodHistory() {
-  historyRequest += 1;
-  historyController?.abort();
-  historyController = null;
-
-  historyList.replaceChildren();
-  historyList.setAttribute("aria-busy", "false");
-
-  historyMessage.textContent = "";
-  historyMessage.classList.remove("error");
-  historyRefresh.disabled = true;
+  window.enwenMoodChart?.clear();
+  historyRequest++; historyController?.abort(); historyController = null;
+  historyEntries = []; historyOffset = 0;
+  historyList.replaceChildren(); historyList.setAttribute("aria-busy", "false");
+  historyMessage.textContent = ""; historyMessage.classList.remove("error");
+  historyRefresh.disabled = historyPrev.disabled = historyNext.disabled = true;
 }
-
+function renderMoodHistoryList() {
+  const fragment = document.createDocumentFragment();
+  for (const entry of historyEntries.slice(historyOffset, historyOffset + 20)) {
+    const item = document.createElement("li"), heading = document.createElement("strong");
+    const timestamp = document.createElement("time"), note = document.createElement("p");
+    const scale = entry.scale_max, names = scale === 5 ? legacyMoodNames : moodNames;
+    heading.textContent = (names[entry.mood_score] || "Mood") + " · " + entry.mood_score + "/" + scale
+      + (scale === 5 ? " · Earlier 1–5 scale" : "");
+    const date = new Date(entry.created_at); timestamp.dateTime = entry.created_at;
+    timestamp.textContent = Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString(undefined,
+      {dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Nairobi"});
+    note.textContent = entry.note || "No note added.";
+    item.append(heading, timestamp, note); fragment.append(item);
+  }
+  historyList.replaceChildren(fragment);
+  historyPrev.disabled = historyOffset === 0;
+  historyNext.disabled = historyOffset + 20 >= historyEntries.length;
+  historyMessage.textContent = historyEntries.length
+    ? "Showing " + (historyOffset + 1) + "–" + Math.min(historyOffset + 20, historyEntries.length)
+      + " of " + historyEntries.length + " check-ins. The charts include your complete saved history."
+    : "No check-ins yet. Your first saved mood will appear here.";
+}
 async function loadMoodHistory() {
   if (!accessToken || !moodConsent) return;
-
-  const generation = moodGeneration;
-  const request = ++historyRequest;
-
+  const generation = moodGeneration, request = ++historyRequest, token = accessToken;
   historyController?.abort();
-
-  const controller = new AbortController();
-  historyController = controller;
-
-  const isCurrent = () =>
-    generation === moodGeneration && request === historyRequest;
-
-  historyRefresh.disabled = true;
-  historyList.replaceChildren();
-  historyList.setAttribute("aria-busy", "true");
-
-  historyMessage.classList.remove("error");
-  historyMessage.textContent = "Loading your check-ins...";
-
+  const controller = new AbortController(); historyController = controller;
+  const isCurrent = () => generation === moodGeneration && request === historyRequest && token === accessToken;
+  historyRefresh.disabled = historyPrev.disabled = historyNext.disabled = true;
+  historyEntries = []; historyOffset = 0; historyList.replaceChildren();
+  historyList.setAttribute("aria-busy", "true"); historyMessage.classList.remove("error");
+  historyMessage.textContent = "Loading your complete history...";
+  window.enwenMoodChart?.clear("Loading all your recorded check-ins...");
   const timeout = setTimeout(() => controller.abort(), 15000);
-
   try {
-    const response = await fetch("/moods?limit=20", {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      signal: controller.signal,
-      cache: "no-store",
-    });
-
-    const entries = await response.json().catch(() => null);
-
-    // Ignore results from an earlier login session or refresh.
-    if (!isCurrent()) return;
-
-    if (response.status === 401) {
-      endSession("Your session expired. Please log in again.");
-      return;
+    const entries = [], seen = new Set();
+    let offset = 0, lastBoundary = null;
+    while (true) {
+      const response = await fetch("/moods?limit=100&offset=" + offset,
+        {headers: {Accept: "application/json", Authorization: "Bearer " + token}, signal: controller.signal, cache: "no-store"});
+      const batch = await response.json().catch(() => null);
+      if (!isCurrent()) return;
+      if (response.status === 401) { endSession("Your session expired. Please log in again."); return; }
+      if (response.status === 403) { pauseWellnessFeatures(); return; }
+      if (!response.ok) throw new Error(typeof batch?.detail === "string" ? batch.detail : "Your mood history could not be loaded.");
+      if (!Array.isArray(batch)) throw new Error("Unexpected history response. Please try Refresh.");
+      for (const entry of batch) {
+        if (entry.mood_id && seen.has(entry.mood_id)) continue;
+        if (entry.mood_id) seen.add(entry.mood_id);
+        entries.push(entry);
+      }
+      if (batch.length < 100) break;
+      const boundary = JSON.stringify([batch[0]?.mood_id, batch[99]?.mood_id, batch[99]?.created_at]);
+      if (boundary === lastBoundary) throw new Error("History pages repeated unexpectedly. Please try Refresh.");
+      lastBoundary = boundary; offset += batch.length;
     }
-
-    if (response.status === 403) {
-      pauseWellnessFeatures();
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        typeof entries?.detail === "string"
-          ? entries.detail
-          : "Your mood history could not be loaded."
-      );
-    }
-
-    if (!Array.isArray(entries)) {
-      throw new Error(
-        "Unexpected response. Please refresh your mood history."
-      );
-    }
-
-    if (!moodConsent) return;
-
-    const fragment = document.createDocumentFragment();
-
-    for (const entry of entries) {
-      const item = document.createElement("li");
-      const heading = document.createElement("strong");
-      const timestamp = document.createElement("time");
-      const note = document.createElement("p");
-
-      heading.textContent =
-        (moodNames[entry.mood_score] || "Mood")
-        + " · " + entry.mood_score + "/5";
-
-      const date = new Date(entry.created_at);
-
-      timestamp.dateTime = entry.created_at;
-      timestamp.textContent = Number.isNaN(date.getTime())
-        ? "Date unavailable"
-        : date.toLocaleString(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short",
-          });
-
-      // Show notes as plain text, never executable HTML.
-      note.textContent = entry.note || "No note added.";
-
-      item.append(heading, timestamp, note);
-      fragment.append(item);
-    }
-
-    historyList.replaceChildren(fragment);
-
-    historyMessage.textContent = entries.length
-      ? "Showing " + entries.length + " recent check-in"
-        + (entries.length === 1 ? "." : "s.")
-      : "No check-ins yet. Your first saved mood will appear here.";
+    if (!moodConsent || !isCurrent()) return;
+    historyEntries = entries;
+    renderMoodHistoryList(); window.enwenMoodChart?.render(entries);
   } catch (error) {
     if (!isCurrent()) return;
-
-    historyList.replaceChildren();
+    historyEntries = []; historyList.replaceChildren();
+    window.enwenMoodChart?.clear("Your graph will appear when history loads successfully.");
     historyMessage.classList.add("error");
-
-    historyMessage.textContent =
-      error.name === "AbortError"
-        ? "History took too long to load. Please try Refresh."
-        : error instanceof TypeError
-          ? "Cannot load history. Check your connection and try Refresh."
-          : error.message;
+    historyMessage.textContent = error.name === "AbortError" ? "History took too long. Please try Refresh."
+      : error instanceof TypeError ? "Cannot load history. Check your connection and try Refresh." : error.message;
   } finally {
     clearTimeout(timeout);
-
-    if (isCurrent()) {
-      historyController = null;
-      historyList.setAttribute("aria-busy", "false");
-      historyRefresh.disabled = !moodConsent;
-    }
+    if (isCurrent()) { historyController = null; historyList.setAttribute("aria-busy", "false"); historyRefresh.disabled = !moodConsent; }
   }
 }
-
-historyRefresh.addEventListener("click", () => {
-  if (!historyRefresh.disabled) {
-    void loadMoodHistory();
-  }
-});
+historyRefresh.addEventListener("click", () => { if (!historyRefresh.disabled) void loadMoodHistory(); });
+historyPrev.addEventListener("click", () => { if (!historyPrev.disabled) { historyOffset -= 20; renderMoodHistoryList(); } });
+historyNext.addEventListener("click", () => { if (!historyNext.disabled) { historyOffset += 20; renderMoodHistoryList(); } });

@@ -1,7 +1,7 @@
 "use strict";
 
 // Each route displays one screen.
-// Login tokens remain in app.js memory.
+// Access tokens stay in memory; the server restores login via an HttpOnly cookie.
 const enwenPages = [
   ...document.querySelectorAll("[data-page]"),
 ];
@@ -13,6 +13,10 @@ const enwenRouteTitles = new Map([
   ["check-in", "Mood check-in"],
   ["mood-history", "Mood history"],
   ["journal", "Journal"],
+  ["chat", "Let's talk"],
+  ["trusted-contact", "Trusted contact"],
+  ["resources", "Wellness resources"],
+  ["pause", "A mindful minute"],
 ]);
 
 const enwenLoginTitle = document.title;
@@ -50,6 +54,8 @@ function renderPage({ focus = true, reset = false } = {}) {
 
   // Never reveal account screens when logged out.
   if (!signedIn) {
+    window.enwenResources?.reset();
+    window.enwenPause?.reset();
     if (validRoute && !reset) {
       enwenPendingRoute = requested;
     }
@@ -76,6 +82,9 @@ function renderPage({ focus = true, reset = false } = {}) {
   );
 
   page.hidden = false;
+  if (route !== "pause") window.enwenPause?.leave();
+  if (route === "resources") void window.enwenResources?.load();
+  if (route === "trusted-contact") void loadTrustedContact();
   document.title = "ENWEN | " + enwenRouteTitles.get(route);
   history.replaceState(null, "", "#/" + route);
 

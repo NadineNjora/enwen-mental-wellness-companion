@@ -1,0 +1,69 @@
+/* Four complementary roles, using local fonts so the demo works offline. */
+:root {
+  --font-body: Candara, "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-heading: Georgia, "Times New Roman", serif;
+  --font-label: Bahnschrift, "Segoe UI", sans-serif;
+  --font-prompt: "Segoe Print", "Comic Sans MS", cursive;
+  font-family: var(--font-body);
+}
+body { font-family: var(--font-body); font-size: 17px; line-height: 1.6; }
+input, textarea, select { font-family: var(--font-body); font-size: 17px; }
+h1, h2, h3, h4, .feature-card h3,
+#journal-section-title, #journal-reader-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+h1 { line-height: 1.12; }
+.app-page > h2, .app-page > h3 { font-size: clamp(30px, 4vw, 42px); }
+.history-heading h3, .history-heading h4 { font-size: clamp(26px, 3.4vw, 34px); }
+.feature-card h3 { font-size: 29px; }
+.feature-card p { font-size: 17px; }
+.enwen-trend h4 { font-size: 27px; }
+.brand, .eyebrow, .badge, button, #app-nav a, legend, label,
+.feature-number, .feature-link, .registration-tag, .registration-steps {
+  font-family: var(--font-label);
+}
+.brand { letter-spacing: 0.15em; }
+.eyebrow { letter-spacing: 0.12em; }
+button, #app-nav a { font-size: 16px; }
+legend { font-size: 17px; line-height: 1.6; }
+.enwen-prompts h4 { font-family: var(--font-prompt); font-size: 22px; line-height: 1.65; letter-spacing: 0; }
+.enwen-prompt-options button { font-family: var(--font-prompt); font-size: 14px; line-height: 1.7; }
+.enwen-prompts > p { font-family: var(--font-body); font-size: 16px; }
+.intro-text { line-height: 1.75; }
+.mood-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0 32px;
+}
+.mood-option { min-width: 0; }
+.mood-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: center;
+  align-items: center;
+  min-height: 136px;
+  padding: 14px 8px;
+  line-height: 1.35;
+  font-size: 14px;
+  border: 1px solid #9c8ca8;
+  background: #fffaf3;
+}
+.mood-option b { font: 500 25px var(--font-heading); }
+.mood-option i { font-style: normal; font-size: 27px; line-height: 1.2; }
+.mood-option input:checked + span { border: 2px solid #241c36; background: #ddf780; }
+.registration-card h2 { font-size: clamp(29px, 4vw, 37px); }
+.registration-description, .registration-intro-copy { font-family: var(--font-body); font-size: 16px; }
+.registration-flower > span { font-family: var(--font-prompt); font-size: 16px; }
+.registration-notice p, .registration-safety { font-size: 13px; line-height: 1.65; }
+.consent-choice { font-size: 13px; line-height: 1.65; }
+.trend-label { font-family: var(--font-body); font-size: 13px; }
+@media (max-width: 600px) {
+  .mood-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .mood-option span { min-height: 116px; }
+  .enwen-prompts h4 { font-size: 20px; }
+  .enwen-prompt-options button { font-size: 14px; }
+}

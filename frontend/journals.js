@@ -14,11 +14,68 @@ const journalReaderTitle = document.querySelector("#journal-reader-title");
 const journalReaderDate = document.querySelector("#journal-reader-date");
 const journalReaderContent = document.querySelector("#journal-reader-content");
 const journalSaveLabel = journalSave.textContent;
+const journalLegend = journalFields.querySelector("legend");
+const journalLegendLabel = journalLegend.textContent;
+const journalClose = document.querySelector("#close-journal");
+
+// Add controls without replacing your page headings or journal wording.
+const journalActions = document.createElement("div");
+journalActions.className = "journal-actions";
+const journalEdit = document.createElement("button");
+journalEdit.id = "journal-edit-button";
+journalEdit.type = "button";
+journalEdit.textContent = "Edit entry";
+const journalDelete = document.createElement("button");
+journalDelete.id = "journal-delete-button";
+journalDelete.type = "button";
+journalDelete.textContent = "Delete entry";
+journalActions.append(journalEdit, journalDelete);
+journalClose.before(journalActions);
+const journalCancelEdit = document.createElement("button");
+journalCancelEdit.id = "journal-cancel-edit";
+journalCancelEdit.type = "button";
+journalCancelEdit.textContent = "Cancel editing";
+journalCancelEdit.hidden = true;
+journalSave.after(journalCancelEdit);
 
 let journalGeneration = 0;
 let journalConsent = false;
 let journalSaving = false;
 const journalJobs = new Map();
+let journalActiveEntry = null;
+let journalEditingId = null;
+let journalOriginalDraft = null;
+
+function setJournalEditing(entry = null) {
+  journalEditingId = entry?.journal_id || null;
+  journalOriginalDraft = entry ? { title: entry.title, content: entry.content } : null;
+  journalLegend.textContent = entry ? "Edit your entry" : journalLegendLabel;
+  journalSave.textContent = entry ? "Save changes" : journalSaveLabel;
+  journalCancelEdit.hidden = !entry;
+  journalFields.setAttribute("data-editing", String(Boolean(entry)));
+}
+
+function journalDraftChanged() {
+  return journalOriginalDraft
+    ? journalTitle.value !== journalOriginalDraft.title || journalContent.value !== journalOriginalDraft.content
+    : Boolean(journalTitle.value || journalContent.value);
+}
+
+function setJournalBusy(busy) {
+  journalSaving = busy;
+  journalFields.disabled = busy || !journalConsent;
+  journalRefresh.disabled = busy || !journalConsent || journalJobs.has("list");
+  journalEdit.disabled = busy || !journalActiveEntry || !journalConsent;
+  journalDelete.disabled = busy || !journalActiveEntry || !journalConsent;
+  journalClose.disabled = busy;
+  for (const button of journalList.querySelectorAll("button")) button.disabled = busy;
+}
+
+function cancelJournalListForMutation() {
+  cancelJournalJob("list");
+  journalList.setAttribute("aria-busy", "false");
+  journalStatus(journalHistoryMessage);
+}
 
 function journalStatus(element, message = "", isError = false) {
   element.textContent = message;
@@ -47,6 +104,9 @@ function beginJournalJob(name) {
 
 function closeJournalReader() {
   cancelJournalJob("read");
+  journalActiveEntry = null;
+  journalEdit.disabled = true;
+  journalDelete.disabled = true;
   journalReader.hidden = true;
   journalReader.setAttribute("aria-busy", "false");
   journalReaderTitle.textContent = "";
@@ -60,6 +120,8 @@ function resetJournalPanel() {
   for (const name of [...journalJobs.keys()]) cancelJournalJob(name);
   journalConsent = false;
   journalSaving = false;
+  journalClose.disabled = false;
+  setJournalEditing();
   journalForm.reset();
   journalFields.disabled = true;
   journalSave.textContent = journalSaveLabel;
@@ -91,6 +153,8 @@ function setupJournalPanel(user) {
 function pauseWellnessFeatures() {
   resetMoodPanel();
   resetJournalPanel();
+  window.enwenResources?.reset();
+  window.enwenPause?.reset();
   const message =
     "Current wellness consent is needed. Please review the current notice before continuing.";
   consentStatus.textContent = message;
@@ -100,7 +164,7 @@ function pauseWellnessFeatures() {
   journalStatus(journalHistoryMessage, message, true);
 }
 
-async function journalRequest(path, job, payload) {
+async function journalRequest(path, job, payload, method = payload === undefined ? "GET" : "POST") {
   const timeout = setTimeout(() => job.controller.abort(), 15000);
   try {
     const headers = {
@@ -113,7 +177,7 @@ async function journalRequest(path, job, payload) {
     }
 
     const response = await fetch(path, {
-      method: payload === undefined ? "GET" : "POST",
+      method,
       headers,
       body: payload === undefined ? undefined : JSON.stringify(payload),
       signal: job.controller.signal,
@@ -122,7 +186,7 @@ async function journalRequest(path, job, payload) {
 
     if (!job.current()) return null;
 
-    const data = await response.json().catch(() => null);
+    const data = response.status === 204 ? null : await response.json().catch(() => null);
 
     if (!job.current()) return null;
 
@@ -220,6 +284,7 @@ async function loadJournalHistory() {
       journalDate(date, entry.created_at);
 
       button.type = "button";
+      button.disabled = journalSaving;
       button.textContent = "Read entry";
       button.setAttribute("aria-label", "Read entry: " + entry.title);
       button.addEventListener("click", () => {
@@ -247,13 +312,13 @@ async function loadJournalHistory() {
     if (job.current()) {
       journalJobs.delete("list");
       journalList.setAttribute("aria-busy", "false");
-      journalRefresh.disabled = false;
+      journalRefresh.disabled = journalSaving;
     }
   }
 }
 
 async function readJournalEntry(id) {
-  if (!accessToken || !journalConsent) return;
+  if (!accessToken || !journalConsent || journalSaving) return;
 
   closeJournalReader();
   const job = beginJournalJob("read");
@@ -274,6 +339,9 @@ async function readJournalEntry(id) {
       throw new Error("Unexpected response. Please open the entry again.");
     }
 
+    journalActiveEntry = entry;
+    journalEdit.disabled = false;
+    journalDelete.disabled = false;
     journalReaderTitle.textContent = entry.title;
     journalDate(journalReaderDate, entry.created_at);
     journalReaderContent.textContent = entry.content;
@@ -316,25 +384,33 @@ journalForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  const editingId = journalEditingId;
+  cancelJournalListForMutation();
+  if (journalJobs.has("read")) closeJournalReader();
   const job = beginJournalJob("save");
-  journalSaving = true;
-  journalFields.disabled = true;
+  setJournalBusy(true);
   journalSave.textContent = "Saving...";
   journalStatus(journalMessage, "Saving your entry...");
 
   try {
-    const entry = await journalRequest("/journals", job, payload);
+    const entry = await journalRequest(
+      editingId ? "/journals/" + encodeURIComponent(editingId) : "/journals",
+      job, payload, editingId ? "PUT" : "POST"
+    );
 
     if (!job.current()) return;
 
-    if (!validJournalSummary(entry) || typeof entry.content !== "string") {
+    if (!validJournalSummary(entry) || typeof entry.content !== "string"
+        || (editingId && entry.journal_id !== editingId)) {
       throw new Error("Could not confirm the save.");
     }
 
+    if (editingId && journalActiveEntry?.journal_id === editingId) closeJournalReader();
     journalForm.reset();
+    setJournalEditing();
     journalStatus(
       journalMessage,
-      "Entry saved. A little space for your thoughts."
+      editingId ? "Changes saved. Your entry has been updated." : "Entry saved. A little space for your thoughts."
     );
 
     // Refresh failure must not change a successful save into a failure.
@@ -352,9 +428,8 @@ journalForm.addEventListener("submit", async (event) => {
   } finally {
     if (job.current()) {
       journalJobs.delete("save");
-      journalSaving = false;
-      journalFields.disabled = false;
-      journalSave.textContent = journalSaveLabel;
+      setJournalBusy(false);
+      journalSave.textContent = journalEditingId ? "Save changes" : journalSaveLabel;
     }
   }
 });
@@ -363,10 +438,73 @@ journalRefresh.addEventListener("click", () => {
   if (!journalRefresh.disabled) void loadJournalHistory();
 });
 
-document.querySelector("#close-journal").addEventListener("click", () => {
+journalClose.addEventListener("click", () => {
+  if (journalSaving) return;
   closeJournalReader();
 
   if (!document.querySelector("#page-journal").hidden) {
     journalRefresh.focus();
+  }
+});
+// Editing uses the existing writing area; selecting Edit never saves anything.
+journalEdit.addEventListener("click", () => {
+  if (!accessToken || !journalConsent || journalSaving || !journalActiveEntry) return;
+  if (journalEditingId === journalActiveEntry.journal_id) {
+    journalTitle.focus();
+    return;
+  }
+  if (journalDraftChanged() && !window.confirm("Replace the unsaved writing in the form with this entry?")) return;
+  setJournalEditing(journalActiveEntry);
+  journalTitle.value = journalActiveEntry.title;
+  journalContent.value = journalActiveEntry.content;
+  journalStatus(journalMessage, "Editing an existing entry. Choose Save changes when ready.");
+  journalTitle.focus();
+});
+
+journalCancelEdit.addEventListener("click", () => {
+  if (journalSaving || !journalEditingId) return;
+  if (journalDraftChanged() && !window.confirm("Discard your unsaved changes to this entry?")) return;
+  journalForm.reset();
+  setJournalEditing();
+  journalStatus(journalMessage, "Editing cancelled. The saved entry is unchanged.");
+  journalTitle.focus();
+});
+
+journalDelete.addEventListener("click", async () => {
+  if (!accessToken || !journalConsent || journalSaving || !journalActiveEntry) return;
+  const id = journalActiveEntry.journal_id;
+  const discardsDraft = journalEditingId === id;
+  if (!window.confirm("Permanently delete this journal entry? This cannot be undone."
+      + (discardsDraft ? " The edit currently in the form will also be cleared." : ""))) return;
+  cancelJournalListForMutation();
+  if (journalJobs.has("read")) closeJournalReader();
+  const job = beginJournalJob("delete");
+  setJournalBusy(true);
+  journalStatus(journalMessage, "Deleting this entry...");
+  try {
+    await journalRequest("/journals/" + encodeURIComponent(id), job, undefined, "DELETE");
+    if (!job.current()) return;
+    closeJournalReader();
+    if (discardsDraft) { journalForm.reset(); setJournalEditing(); }
+    journalStatus(journalMessage, "Entry deleted.");
+    void loadJournalHistory();
+  } catch (error) {
+    if (!job.current()) return;
+    journalStatus(journalMessage, !error.status || error.status >= 500
+      ? "We could not confirm the deletion. Use Refresh journals to check before trying again."
+      : error.message, true);
+  } finally {
+    if (job.current()) {
+      journalJobs.delete("delete");
+      setJournalBusy(false);
+    }
+  }
+});
+
+// Warn before a page reload would discard writing kept only in memory.
+window.addEventListener("beforeunload", event => {
+  if (accessToken && (journalDraftChanged() || journalSaving)) {
+    event.preventDefault();
+    event.returnValue = "";
   }
 });

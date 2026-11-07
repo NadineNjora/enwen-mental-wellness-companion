@@ -1,11 +1,13 @@
 import os
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
 import jwt
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
@@ -16,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from database import engine
 from models import Consent, User
+from auth_session_models import BrowserSession
 from registration import CONSENT_VERSION, RegistrationResponse, password_hasher
 
 load_dotenv(Path(__file__).with_name(".env"))
@@ -27,6 +30,9 @@ ALGORITHM = "HS256"
 ISSUER = "enwen-api"
 AUDIENCE = "enwen-client"
 TOKEN_MINUTES = 15
+SESSION_COOKIE = "enwen_session"
+SESSION_DAYS = 7
+SESSION_MAX_DAYS = 30
 DUMMY_HASH = password_hasher.hash("dummy-password-not-an-account")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -59,7 +65,8 @@ def unauthorized(message="Invalid or expired login token."):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest, response: Response):
+def login(data: LoginRequest, response: Response, request: Request):
+    check_origin(request)
     try:
         with Session(engine) as session:
             user = session.scalar(
@@ -73,12 +80,26 @@ def login(data: LoginRequest, response: Response):
                 raise unauthorized("Incorrect email or password.")
 
             user_id = str(user.user_id)
+            now = datetime.now(timezone.utc)
+            secret = secrets.token_urlsafe(48)
+            browser_session = BrowserSession(user_id=user.user_id,
+                token_hash=hashlib.sha256(secret.encode()).hexdigest(),
+                expires_at=now + timedelta(days=SESSION_DAYS),
+                absolute_expires_at=now + timedelta(days=SESSION_MAX_DAYS))
+            session.add(browser_session)
+            session.commit()
+            sid = str(browser_session.session_id)
 
     except UnknownHashError:
         raise unauthorized("Incorrect email or password.") from None
     except SQLAlchemyError:
         raise HTTPException(503, "Login is temporarily unavailable.") from None
 
+    set_session_cookie(response, request, secret, SESSION_DAYS * 86400)
+    return issue_access_token(user_id, sid, response)
+
+
+def issue_access_token(user_id, sid, response):
     now = datetime.now(timezone.utc)
     token = jwt.encode(
         {
@@ -88,12 +109,73 @@ def login(data: LoginRequest, response: Response):
             "iss": ISSUER,
             "aud": AUDIENCE,
             "type": "access",
+            "sid": sid,
         },
         JWT_SECRET,
         algorithm=ALGORITHM,
     )
     response.headers["Cache-Control"] = "no-store"
     return TokenResponse(access_token=token)
+
+
+def check_origin(request):
+    origin = request.headers.get("origin")
+    if origin and origin.rstrip("/") != str(request.base_url).rstrip("/"):
+        raise HTTPException(403, "Please use ENWEN from its own website.")
+
+
+def set_session_cookie(response, request, secret, max_age):
+    response.set_cookie(SESSION_COOKIE, secret, max_age=max_age, httponly=True,
+        secure=request.url.scheme == "https", samesite="strict", path="/auth")
+    response.headers["Cache-Control"] = "no-store"
+
+
+def find_session(session, request):
+    secret = request.cookies.get(SESSION_COOKIE, "")
+    if not secret or len(secret) > 128:
+        raise unauthorized("Please log in again.")
+    record = session.scalar(select(BrowserSession).where(
+        BrowserSession.token_hash == hashlib.sha256(secret.encode()).hexdigest()).with_for_update())
+    now = datetime.now(timezone.utc)
+    if record is None or record.revoked_at is not None or record.expires_at <= now or record.absolute_expires_at <= now:
+        raise unauthorized("Your saved session expired. Please log in again.")
+    if session.get(User, record.user_id) is None:
+        raise unauthorized()
+    return record, secret, now
+
+
+@router.post("/session", response_model=TokenResponse)
+def restore_session(request: Request, response: Response):
+    check_origin(request)
+    try:
+        with Session(engine) as session:
+            record, secret, now = find_session(session, request)
+            record.expires_at = min(now + timedelta(days=SESSION_DAYS), record.absolute_expires_at)
+            max_age = max(1, int((record.expires_at - now).total_seconds()))
+            user_id, sid = str(record.user_id), str(record.session_id)
+            session.commit()
+        set_session_cookie(response, request, secret, max_age)
+        return issue_access_token(user_id, sid, response)
+    except SQLAlchemyError:
+        raise HTTPException(503, "Saved login is temporarily unavailable.") from None
+
+
+@router.post("/logout", status_code=204)
+def logout(request: Request, response: Response):
+    check_origin(request)
+    try:
+        with Session(engine) as session:
+            secret = request.cookies.get(SESSION_COOKIE, "")
+            if secret and len(secret) <= 128:
+                record = session.scalar(select(BrowserSession).where(
+                    BrowserSession.token_hash == hashlib.sha256(secret.encode()).hexdigest()).with_for_update())
+                if record:
+                    record.revoked_at = datetime.now(timezone.utc)
+                    session.commit()
+        response.delete_cookie(SESSION_COOKIE, path="/auth", httponly=True, samesite="strict")
+        response.headers["Cache-Control"] = "no-store"
+    except SQLAlchemyError:
+        raise HTTPException(503, "Logout could not be confirmed. Please try again.") from None
 
 
 def get_current_user(
@@ -114,11 +196,19 @@ def get_current_user(
         if payload["type"] != "access":
             raise unauthorized()
         user_id = UUID(payload["sub"])
+        if "sid" in payload:
+            UUID(payload["sid"])
     except (InvalidTokenError, ValueError, TypeError):
         raise unauthorized() from None
 
     try:
         with Session(engine) as session:
+            if "sid" in payload:
+                record = session.get(BrowserSession, UUID(payload["sid"]))
+                now = datetime.now(timezone.utc)
+                if (record is None or record.user_id != user_id or record.revoked_at is not None
+                    or record.expires_at <= now or record.absolute_expires_at <= now):
+                    raise unauthorized()
             user = session.get(User, user_id)
             if user is None:
                 raise unauthorized()
