@@ -23,18 +23,29 @@ def configuration():
 
 def sms_provider():
     selected = os.getenv("SMS_PROVIDER", "africastalking").strip().lower()
-    if selected not in ("africastalking", "twilio"):
-        raise SmsError("Choose SMS_PROVIDER=twilio or africastalking. No provider fallback is attempted.")
+    if selected not in ("africastalking", "twilio", "brevo"):
+        raise SmsError("Choose SMS_PROVIDER=brevo, twilio or africastalking. No provider fallback is attempted.")
     return selected
 
 
 def validate_configuration():
     values = configuration()
-    if os.getenv("SMS_MODE", "disabled").lower() != "live" or os.getenv("LIVE_SMS_ENABLED", "false").lower() != "true":
+    if os.getenv("SMS_MODE", "disabled").strip().lower() != "live" or os.getenv("LIVE_SMS_ENABLED", "false").strip().lower() != "true":
         raise SmsError("Live SMS is disabled. Set SMS_MODE=live and LIVE_SMS_ENABLED=true only when ready for a paid connection test.")
     if not re.fullmatch(r"\+254[17]\d{8}", values["recipient"]):
         raise SmsError("Set SMS_TEST_RECIPIENT to your own Kenyan mobile in +254 format, with no spaces.")
-    if sms_provider() == "twilio":
+    selected = sms_provider()
+    if selected == "brevo":
+        key = os.getenv("BREVO_API_KEY", "").strip()
+        sender = os.getenv("BREVO_SMS_SENDER", "").strip()
+        if not key:
+            raise SmsError("Set BREVO_API_KEY privately in backend/.env. Use an API key, not an SMTP password.")
+        if not re.fullmatch(r"(?=.{1,11}$)(?=.*[A-Za-z])[A-Za-z0-9]+", sender):
+            raise SmsError("Set BREVO_SMS_SENDER to your approved alphanumeric sender: 1-11 letters/digits with at least one letter, no spaces or punctuation.")
+        if os.getenv("BREVO_SMS_SENDER_APPROVED", "false").strip().lower() != "true":
+            raise SmsError("Register the SMS sender for Kenya and confirm approval in Brevo before setting BREVO_SMS_SENDER_APPROVED=true. Email sender verification is separate.")
+        return {"provider":"brevo", "api_key":key, "sender":sender, "recipient":values["recipient"]}
+    if selected == "twilio":
         account = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
         token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
         sender = os.getenv("TWILIO_FROM", "").strip()
@@ -50,6 +61,27 @@ def validate_configuration():
     if not values["sender"]:
         raise SmsError("Set AT_SENDER_ID to the sender authorised by your provider.")
     return values
+
+
+def _send_brevo_test(values):
+    try:
+        with httpx.Client(timeout=httpx.Timeout(15, connect=5), follow_redirects=False, trust_env=False) as client:
+            reply = client.post("https://api.brevo.com/v3/transactionalSMS/send",
+                headers={"api-key":values["api_key"], "Accept":"application/json", "Content-Type":"application/json"},
+                json={"sender":values["sender"], "recipient":values["recipient"][1:],
+                      "content":TEST_MESSAGE, "type":"transactional", "tag":"enwen-own-phone-test"})
+        if reply.status_code >= 500 or reply.status_code in (408, 429):
+            raise SmsError("SMS acceptance is uncertain. Check Brevo and your phone before trying again. Nothing was retried.")
+        if reply.status_code != 201:
+            raise SmsError("Brevo did not accept this SMS. Check SMS activation, Kenyan sender approval, recipient and SMS credits. Nothing was retried.")
+        reference = reply.json().get("messageId")
+        # Brevo documents an integer ID. Accept its numeric string form too,
+        # but never bool, an arbitrary object or an empty/invalid identifier.
+        if type(reference) not in (int, str) or not re.fullmatch(r"[1-9]\d{0,31}", str(reference)):
+            raise SmsError("Brevo SMS acceptance could not be confirmed. Check its dashboard before retrying.")
+        return {"provider":"brevo", "status":"provider_accepted", "message_id":str(reference), "delivery_confirmed":False}
+    except (httpx.HTTPError, ValueError, TypeError, AttributeError):
+        raise SmsError("SMS delivery is uncertain. Check Brevo and your phone before retrying. No automatic retry was made.") from None
 
 
 def _send_twilio_test(values):
@@ -76,6 +108,8 @@ def send_connection_test(*, confirmed=False):
     if confirmed is not True:
         raise SmsError("Explicit confirmation is required before sending a real SMS.")
     values = validate_configuration()
+    if values.get("provider") == "brevo":
+        return _send_brevo_test(values)
     if values.get("provider") == "twilio":
         return _send_twilio_test(values)
     try:
