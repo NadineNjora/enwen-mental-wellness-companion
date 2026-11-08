@@ -85,6 +85,7 @@ function renderPage({ focus = true, reset = false } = {}) {
   if (route !== "pause") window.enwenPause?.leave();
   if (route === "resources") void window.enwenResources?.load();
   if (route === "trusted-contact") { void loadTrustedContact(); void window.enwenLiveContacts?.load(); }
+  if (route === "home") void window.enwenSuggestions?.load();
   document.title = "ENWEN | " + enwenRouteTitles.get(route);
   history.replaceState(null, "", "#/" + route);
 

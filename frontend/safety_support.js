@@ -5,6 +5,8 @@
   // intervention and reported delivery outcome; it never sends an alert.
   let panel = null, isActive = false, lastEvent = null;
   const statusLabels = {
+    provider_accepted: "Email accepted by provider; delivery is unconfirmed",
+    blocked_demo: "Fictional demonstration; no real person notified",
     local_test_captured: "Local demonstration email captured",
     blocked_no_contact: "No trusted contact is saved",
     blocked_unconfirmed: "Trusted contact has not agreed",

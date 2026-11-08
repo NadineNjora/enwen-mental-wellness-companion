@@ -11,6 +11,8 @@ from auth_session_models import BrowserSession
 from chat_history_models import ChatConversation, ChatTurn, DeletedChatRequest
 from safety_models import SafetyAlert
 from live_contact_models import LiveContactInvitation
+from knowledge import seed as seed_knowledge
+from live_email_alerts import LiveEmailAlert, LiveEmailPermission
 
 
 def create_tables():
@@ -26,6 +28,9 @@ def create_tables():
         "deleted_chat_requests",
         "safety_alerts",
         "live_contact_invitations",
+        "knowledge_passages",
+        "live_email_alerts",
+        "live_email_permissions",
         "consents",
         "mood_entries",
         "journal_entries",
@@ -41,6 +46,7 @@ def create_tables():
 
         print(f"Confirmed table: {name}")
     create_resources()
+    seed_knowledge()
 
 
 if __name__ == "__main__":

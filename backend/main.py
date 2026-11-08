@@ -19,6 +19,8 @@ from chat_management import router as chat_management_router
 from safety_screen import router as safety_router
 from safety_alerts import router as safety_alert_router
 from live_contacts import router as live_contacts_router
+from recommendations import router as recommendations_router
+from live_email_alerts import router as live_alert_permissions_router
 
 app = FastAPI(title="ENWEN API")
 app.include_router(registration_router)
@@ -33,6 +35,12 @@ app.include_router(chat_management_router)
 app.include_router(safety_router)
 app.include_router(safety_alert_router)
 app.include_router(live_contacts_router)
+app.include_router(recommendations_router)
+app.include_router(live_alert_permissions_router)
+
+@app.exception_handler(SQLAlchemyError)
+async def database_error_handler(request: Request, error: SQLAlchemyError):
+    return JSONResponse(status_code=503,content={"detail":"The database operation could not be confirmed. Refresh the current status before retrying; no automatic retry occurred."},headers={"Cache-Control":"no-store"})
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, error: RequestValidationError):

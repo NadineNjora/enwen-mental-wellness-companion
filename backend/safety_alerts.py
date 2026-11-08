@@ -4,6 +4,7 @@ This module NEVER sends SMS, real email, a user's name or any chat content.
 The existing contact confirmation and consent are prototype-test decisions.
 """
 import re
+import os
 from datetime import timedelta
 from smtplib import SMTPException
 from uuid import UUID
@@ -68,6 +69,9 @@ def create_alert(user_id, request_id, conversation_id=None, demonstration=False)
     Database errors propagate so the caller can still show support resources
     while honestly reporting that recording/capture could not be confirmed.
     """
+    if os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true':
+        from live_email_alerts import create_live_alert
+        return create_live_alert(user_id,request_id,demonstration=demonstration)
     user_id, request_id = UUID(str(user_id)), UUID(str(request_id))
     conversation_id = UUID(str(conversation_id)) if conversation_id is not None else None
     if not isinstance(demonstration, bool):
@@ -142,7 +146,8 @@ def get_own_event(user_id, event_id):
             SafetyAlert.event_id == UUID(str(event_id)), SafetyAlert.user_id == UUID(str(user_id)),
         ))
         if event is None:
-            raise HTTPException(404, "Support notification was not found.")
+            from live_email_alerts import own_event
+            return own_event(user_id,event_id)
         return _result(event.event_id, event.status)
 
 

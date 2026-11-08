@@ -2,9 +2,9 @@
 (() => {
   const by=id=>document.getElementById("live-contact-"+id);
   const form=by("form"),fields=by("fields"),message=by("message"),details=by("details"),revoke=by("revoke");
-  let generation=0,busy=false,notice=null,record=null,attempt=null;
+  let generation=0,busy=false,notice=null,record=null,attempt=null,alertNotice=null;
   const jobs=new Set();
-  function reset(){generation++;for(const c of jobs)c.abort();jobs.clear();busy=false;notice=record=attempt=null;form.reset();fields.disabled=true;details.textContent="";message.textContent="";revoke.hidden=true;by("notice").textContent="";}
+  function reset(){generation++;for(const c of jobs)c.abort();jobs.clear();busy=false;notice=record=attempt=alertNotice=null;form.reset();fields.disabled=true;details.textContent="";message.textContent="";revoke.hidden=true;by("notice").textContent="";by('alert-notice').textContent='';by('alert-status').textContent='';by('alert-ack').checked=false;by('alert-allow').disabled=by('alert-off').disabled=true;}
   async function request(path,options={}){
     const session=generation,token=accessToken,c=new AbortController();jobs.add(c);const timer=setTimeout(()=>c.abort(),25000);
     try{
@@ -17,14 +17,15 @@
       return data;
     }finally{clearTimeout(timer);jobs.delete(c);}
   }
-  function controls(){fields.disabled=!accessToken||busy||!notice?.ready;by("refresh").disabled=busy||!accessToken;revoke.disabled=busy;}
+  function controls(){fields.disabled=!accessToken||busy||!notice?.ready;by("refresh").disabled=busy||!accessToken;revoke.disabled=busy;by('alert-allow').disabled=busy||!alertNotice||record?.status!=='accepted'||!by('alert-ack').checked;by('alert-off').disabled=busy||!alertNotice?.accepted;}
   async function load(){
     if(!accessToken||busy)return;const session=generation;busy=true;controls();
     try{
-      const n=await request("/notice"),r=await request("");if(session!==generation)return;
+      const n=await request("/notice"),r=await request(""),a=await request('/alert-permission');if(session!==generation)return;
+      alertNotice=a;by('alert-notice').textContent=a.text;by('alert-ack').checked=false;by('alert-status').textContent=(a.accepted?'Your live-email permission is on. ':'Your live-email permission is off. ')+(a.delivery_enabled?'Delivery still requires a current accepted contact.':'Live delivery remains disabled on this installation.');
       notice=n;record=r;by("notice").textContent=n.text;
       message.textContent=n.reason;
-      details.textContent=r?`${r.full_name} · ${r.email} · ${r.status}. Email: ${r.delivery_status}. Automatic alerts are off.`:"No real email enrollment yet. Local practice contacts stay separate.";
+      details.textContent=r?`${r.full_name} · ${r.email} · ${r.status}. Email: ${r.delivery_status}. Check the separate permission and delivery status below.`:"No real email enrollment yet. Local practice contacts stay separate.";
       revoke.hidden=!r||r.status==="revoked";
     }catch(e){if(session===generation)message.textContent=e.message;}
     finally{if(session===generation){busy=false;controls();}}
@@ -43,7 +44,7 @@
       const result=await request("",{method:"POST",body:{...attempt,notice_version:notice.notice_version,acknowledged:true}});
       if(session!==generation)return;
       record=result;message.textContent=result.delivery_status==="provider_accepted"?"Brevo accepted the invitation; this is not proof it reached their inbox. They must choose Accept or Decline.":"Sending is uncertain. Refresh status and check Brevo before considering a replacement. No automatic resend occurred.";
-      details.textContent=`${result.full_name} · ${result.email} · ${result.status}. Email: ${result.delivery_status}. Automatic alerts are off.`;
+      details.textContent=`${result.full_name} · ${result.email} · ${result.status}. Email: ${result.delivery_status}. Check separate alert permission below.`;
       revoke.hidden=false;by("ack").checked=false;
     }catch(e){if(session===generation)message.textContent=e.status?e.message:"Outcome unconfirmed. Your form and request identifier are kept. Refresh status before retrying; nothing was automatically resent.";}
     finally{if(session===generation){busy=false;controls();}}
@@ -56,6 +57,14 @@
     finally{if(session===generation){busy=false;controls();}}
   });
   by("refresh").addEventListener("click",()=>void load());
+  by('alert-ack').addEventListener('change',controls);
+  async function permission(accepted){
+    if(busy||!alertNotice||(accepted&&!by('alert-ack').checked))return;const session=generation;busy=true;controls();
+    try{const result=await request('/alert-permission',{method:'POST',body:{accepted,notice_version:alertNotice.notice_version}});if(session===generation){alertNotice.accepted=result.accepted;by('alert-ack').checked=false;by('alert-status').textContent=accepted?'Permission recorded. Actual delivery still requires deployment, an accepted recipient and enabled live delivery.':'Permission withdrawn. No new check-in emails are authorised.';}}
+    catch(e){if(session===generation)by('alert-status').textContent=e.message;}
+    finally{if(session===generation){busy=false;controls();}}
+  }
+  by('alert-allow').addEventListener('click',()=>void permission(true));by('alert-off').addEventListener('click',()=>void permission(false));
   window.enwenLiveContacts={reset,load};
   reset();
 })();

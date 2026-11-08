@@ -21,9 +21,11 @@ from authentication import AccountResponse, get_current_user
 from chat_history import claim_turn, finish_turn, fail_turn, latest_support
 from safety_screen import support_signal, support_payload, is_demonstration, SUPPORT_MESSAGE
 from safety_alerts import create_alert
+from runtime_settings import ollama_origin
+from knowledge import retrieve as retrieve_knowledge
 
 router = APIRouter(prefix="/chat", tags=["AI conversations"])
-NOTICE_VERSION = "saved-chat-safety-3"
+NOTICE_VERSION = "saved-chat-safety-4"
 NOTICE = ("Your messages in this conversation and selected public resource summaries will be sent to {processor} "
           "to generate an AI response. Your saved journals and mood records are not sent. "
           "Use fictional messages during development. AI replies may be inaccurate; ENWEN is not a clinician "
@@ -73,7 +75,7 @@ class ChatRequest(BaseModel):
 
 LLAMA_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
 LOCAL_LLAMA_MODEL = "llama3.2:3b"
-LOCAL_NOTICE = ("Llama 3.2 runs through Ollama on this computer. ENWEN sends this conversation and selected "
+LOCAL_NOTICE = ("Llama 3.2 runs through Ollama on the computer hosting ENWEN. ENWEN sends this conversation and selected "
                 "public resource summaries only to the local Ollama service; it does not send them to Groq or OpenRouter. "
                 "Your saved journals and mood records are not sent. Use fictional messages while this feature is being evaluated. "
                 "AI replies can be inaccurate and do not replace professional care. Your conversation and this acknowledgement "
@@ -86,8 +88,8 @@ LOCAL_NOTICE = ("Llama 3.2 runs through Ollama on this computer. ENWEN sends thi
 def provider():
     selected = os.getenv("AI_PROVIDER", "groq").strip().lower()
     if selected == "ollama":
-        return {"id":"ollama", "name":"Ollama (local Llama 3.2)", "processor":"the local Ollama service on this computer",
-                "key_name":None, "endpoint":"http://127.0.0.1:11434/api/chat"}
+        return {"id":"ollama", "name":"Ollama (local Llama 3.2)", "processor":"ENWEN's local Ollama service on its host computer",
+                "key_name":None, "endpoint":ollama_origin()+"/api/chat"}
     if selected == "openrouter":
         return {"id":"openrouter", "name":"OpenRouter", "processor":"OpenRouter and its model-hosting provider",
                 "key_name":"OPENROUTER_API_KEY", "endpoint":"https://openrouter.ai/api/v1/chat/completions"}
@@ -122,7 +124,7 @@ def missing_configuration():
 def local_model_ready():
     try:
         with httpx.Client(timeout=3, trust_env=False, follow_redirects=False) as client:
-            reply = client.get("http://127.0.0.1:11434/api/tags")
+            reply = client.get(ollama_origin()+"/api/tags")
         return reply.status_code == 200 and any(row.get("name") == LOCAL_LLAMA_MODEL for row in reply.json().get("models", []))
     except (httpx.HTTPError, ValueError, TypeError, AttributeError):
         return False
@@ -139,14 +141,9 @@ def require_consent(user):
 
 
 def retrieve_resources(message):
-    words = set(re.findall(r"[a-z]{3,}", message.lower())) - {"the", "and", "this", "that", "have", "with", "for", "feel", "feeling"}
-    scored = []
-    for row in CATALOG:
-        text = " ".join(str(row[k]) for k in ("title", "summary", "category", "publisher")).lower()
-        score = len(words & set(re.findall(r"[a-z]{3,}", text)))
-        if score: scored.append((score, row))
-    scored.sort(key=lambda item: item[0], reverse=True)
-    return [row for _, row in scored[:3]]
+    from sqlalchemy.exc import SQLAlchemyError
+    try:return retrieve_knowledge(message)
+    except SQLAlchemyError:raise HTTPException(503,'The resource knowledge database is unavailable. No unsupported reply was generated.') from None
 
 
 def limit_user(user_id):
@@ -236,7 +233,7 @@ def chat_response(record, request_id, *, history_saved=True):
     return {"reply":record.get("reply") or SUPPORT_MESSAGE, "sources":record.get("sources") or [],
             "conversation_id":record.get("conversation_id"), "turn_id":record.get("turn_id"),
             "request_id":str(request_id), "safety":safety, "history_saved":history_saved,
-            "retrieval":"keyword matching over catalog summaries", "alerts_sent":False,
+            "retrieval":"BM25 retrieval over attributed database summaries", "alerts_sent":False,
             "local_notification_captured":bool(safety and safety.get("alert",{}).get("status") == "local_test_captured")}
 
 

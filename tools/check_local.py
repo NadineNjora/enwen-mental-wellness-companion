@@ -42,7 +42,7 @@ def main():
             tables = set(inspect(connection).get_table_names())
         expected = {"users", "consents", "browser_sessions", "mood_entries", "journal_entries",
                     "trusted_contacts", "trusted_contact_invitations", "wellness_resources",
-                    "resource_bookmarks", "chat_conversations", "chat_turns", "deleted_chat_requests", "safety_alerts", "live_contact_invitations"}
+                    "resource_bookmarks", "chat_conversations", "chat_turns", "deleted_chat_requests", "safety_alerts", "live_contact_invitations", "knowledge_passages", "live_email_alerts", "live_email_permissions"}
         missing = sorted(expected - tables)
         record("PostgreSQL", "not_ready" if missing else "ready",
                "Missing tables: " + ", ".join(missing) if missing else "Connected; expected tables exist. No student records were read.", True)

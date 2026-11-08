@@ -27,10 +27,11 @@ NOTICE = ("I agree to store this person's name and email and ask them by real em
           "I have their permission to provide these details. The email shares my ENWEN display name and a secure response link, "
           "not my chats, journals, mood history or diagnosis. They may decline or withdraw. "
           "Accepting enrolls them as a contact; automatic wellness alerts and SMS are not enabled by this invitation.")
-RECIPIENT_VERSION = "live-recipient-1"
+RECIPIENT_VERSION = "live-recipient-2"
 RECIPIENT_NOTICE = ("An ENWEN student nominated you as a trusted contact. Accepting confirms possession of this invitation link "
     "and your agreement to be recorded as their contact. It does not give access to private records, require a clinical role "
-    "or guarantee an emergency response. Automatic wellness emails and SMS are not enabled by this acceptance. "
+    "or guarantee an emergency response. You agree to receive minimal wellbeing check-in emails if the student separately enables them. "
+    "These automated signals can be wrong; no private message text is included. Acceptance alone does not activate alerts. SMS is not included. "
     "You may decline now or withdraw using the separate link in your email. ENWEN is not an emergency service.")
 
 def reject(code, message):
@@ -111,12 +112,12 @@ def own(response: Response, user: AccountResponse=Depends(get_current_user)):
             return summary(row,db.scalar(select(func.clock_timestamp()))) if row else None
     except SQLAlchemyError: reject(503,"Invitation status is unavailable. Nothing was sent.")
 
-def send_real_invitation(recipient, sender, body):
+def send_real_invitation(recipient, sender, body, subject="An ENWEN trusted-contact invitation"):
     try:
         with httpx.Client(timeout=httpx.Timeout(15,connect=5),follow_redirects=False,trust_env=False) as client:
             reply=client.post("https://api.brevo.com/v3/smtp/email",headers={"api-key":os.environ["BREVO_API_KEY"],"Accept":"application/json"},
                 json={"sender":{"name":"ENWEN","email":sender},"to":[{"email":recipient}],
-                      "subject":"An ENWEN trusted-contact invitation","textContent":body})
+                      "subject":subject,"textContent":body})
         if reply.status_code!=201: raise EmailServiceError("Acceptance unconfirmed")
         reference=reply.json().get("messageId")
         if not isinstance(reference,str) or not reference.strip() or len(reference)>512: raise EmailServiceError("Acceptance unconfirmed")

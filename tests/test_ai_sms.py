@@ -143,7 +143,7 @@ with patch.dict(os.environ,{"AI_PROVIDER":"ollama", "GROQ_API_KEY":"unused-groq-
     try:ai_chat.generate_reply(payload["messages"],[]);raise AssertionError("incomplete")
     except HTTPException as error:check("incomplete local response rejected",error.status_code==503)
 
-live={"SMS_MODE":"live","LIVE_SMS_ENABLED":"true","AT_USERNAME":"fictional-app","AT_API_KEY":"synthetic-sms-key","AT_SENDER_ID":"FICTIONAL","SMS_TEST_RECIPIENT":"+254700000001"}
+live={"SMS_PROVIDER":"africastalking","SMS_MODE":"live","LIVE_SMS_ENABLED":"true","AT_USERNAME":"fictional-app","AT_API_KEY":"synthetic-sms-key","AT_SENDER_ID":"FICTIONAL","SMS_TEST_RECIPIENT":"+254700000001"}
 with patch.dict(os.environ,live), patch.object(sms.httpx,"Client") as constructor:
     transport=constructor.return_value.__enter__.return_value
     try: sms.send_connection_test(); raise AssertionError("must confirm")

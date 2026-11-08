@@ -23,6 +23,7 @@
 <script src="/static/journals.js?v=20261105-refine" defer></script>
   <script src="/static/trusted-contact.js?v=20261105-refine" defer></script>
   <script src="/static/live-contacts.js?v=20261108" defer></script>
+  <script src="/static/suggestions.js?v=20261108" defer></script>
   <script src="/static/contact_setup.js?v=20261105-refine" defer></script>
   <script src="/static/resources.js?v=20261105-refine" defer></script>
   <script src="/static/pause.js?v=20261105-refine" defer></script>
@@ -164,6 +165,11 @@
               <span class="feature-link">Take a moment →</span>
             </a>
           </div>
+          <section id="wellness-suggestions" class="contact-setup-panel" aria-labelledby="suggestion-title" hidden>
+            <h3 id="suggestion-title">A small next step, chosen for today 🌷</h3>
+            <p id="suggestion-message" role="status"></p><ul id="suggestion-links"></ul>
+            <p class="small-note">These starting points use your latest check-in, not a clinical assessment. Your journal text and mood notes are not sent to the AI.</p>
+          </section>
           <aside class="contact-home" aria-labelledby="contact-home-title">
             <div>
               <p class="eyebrow">One person in your corner</p>
@@ -238,6 +244,12 @@
             </fieldset></form>
             <button id="live-contact-revoke" type="button" hidden>Withdraw enrollment</button>
             <p id="live-contact-message" class="status" role="status"></p>
+            <section aria-labelledby="live-alert-title"><h4 id="live-alert-title">Your choice about check-in emails</h4>
+              <p id="live-contact-alert-notice" class="contact-notice"></p>
+              <label class="contact-ack"><input id="live-contact-alert-ack" type="checkbox"><span>I have read and agree to this check-in email notice.</span></label>
+              <div class="chat-controls"><button id="live-contact-alert-allow" type="button" disabled>Allow check-in emails</button><button id="live-contact-alert-off" type="button" disabled>Turn off permission</button></div>
+              <p id="live-contact-alert-status" role="status"></p>
+            </section>
           </section>
           <p class="small-note">After sending, open <a href="http://127.0.0.1:8025/" target="_blank" rel="noopener noreferrer">the local Mailpit inbox</a> on this computer, choose Accept or Decline in the invitation, then return and refresh the status. No mood or journal content is included.</p>
         </section>
