@@ -1,0 +1,79 @@
+name: enwen
+services:
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set your owned application hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge, app]
+    depends_on:
+      web:
+        condition: service_healthy
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      AI_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://ollama:11434
+      PUBLIC_APP_URL: https://${APP_DOMAIN}
+      LIVE_CONTACT_EMAIL_ENABLED: "false"
+      LIVE_SMS_ENABLED: "false"
+      SMS_MODE: disabled
+      LIVE_EMAIL_ENABLED: "false"
+    networks: [app, data, outbound]
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/db',timeout=4)"]
+      interval: 20s
+      timeout: 6s
+      retries: 5
+      start_period: 45s
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Set DB_NAME}
+      POSTGRES_USER: ${DB_USER:?Set DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set a fresh DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    networks: [data, outbound]
+networks:
+  edge: {}
+  app:
+    internal: true
+  data:
+    internal: true
+  outbound: {}
+volumes:
+  postgres_data: {}
+  ollama_data: {}
+  caddy_data: {}
+  caddy_config: {}

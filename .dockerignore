@@ -1,0 +1,13 @@
+**/.env
+**/.env.*
+**/.venv
+**/__pycache__
+.git
+private-data
+deploy/secrets
+tests
+**/*.dump
+**/*.backup
+**/*.log
+**/*.pem
+**/*.key

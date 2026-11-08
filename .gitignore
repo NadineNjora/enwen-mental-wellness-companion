@@ -34,4 +34,7 @@ Thumbs.db
 uploads/
 exports/
 private-data/
+*.dump
+*.backup
+deploy/secrets/
 
