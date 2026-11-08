@@ -13,6 +13,7 @@ const enwenRouteTitles = new Map([
   ["check-in", "Mood check-in"],
   ["mood-history", "Mood history"],
   ["journal", "Journal"],
+  ["community", "Community"],
   ["chat", "Let's talk"],
   ["trusted-contact", "Trusted contact"],
   ["resources", "Wellness resources"],
@@ -87,6 +88,7 @@ function renderPage({ focus = true, reset = false } = {}) {
   if (route === "trusted-contact") { void loadTrustedContact(); void window.enwenLiveContacts?.load(); }
   if (route === "home") void window.enwenSuggestions?.load();
   if (route === "mood-history") void window.enwenMoodInsights?.load();
+  if (route === "community") void window.enwenCommunity?.load();
   document.title = "ENWEN | " + enwenRouteTitles.get(route);
   history.replaceState(null, "", "#/" + route);
 

@@ -11,6 +11,7 @@ from database import engine
 from registration import router as registration_router
 from moods import router as moods_router
 from mood_insights import router as mood_insights_router
+from community import router as community_router
 from journals import router as journals_router
 from contacts_invitations import router as contact_invitations_router
 from resources import router as resources_router
@@ -28,6 +29,7 @@ app.include_router(registration_router)
 app.include_router(authentication_router)
 app.include_router(moods_router)
 app.include_router(mood_insights_router)
+app.include_router(community_router)
 app.include_router(journals_router)
 app.include_router(contact_invitations_router)
 app.include_router(resources_router)

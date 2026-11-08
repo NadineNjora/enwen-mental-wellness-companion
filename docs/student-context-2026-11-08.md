@@ -30,4 +30,4 @@ The running browser was also verified after restarting FastAPI. One clearly labe
 
 ## Remaining work
 
-Public HTTPS deployment, real-device PWA testing, supervised quality/safety evaluation, student usability evaluation and final documentation remain. Peer journaling and an administrative moderation/resource workflow have not been built. SMS remains on hold. The local email demonstration is verified in the separate delivery checkpoint; broader real-contact operation is not claimed.
+Public HTTPS deployment, real-device PWA testing, supervised quality/safety evaluation, student usability evaluation and final documentation remain. Peer journaling and community moderation were added in the subsequent [community checkpoint](community-checkpoint-2026-11-08.md); full user/resource administration remains outstanding. SMS remains on hold. The local email demonstration is verified in the separate delivery checkpoint; broader real-contact operation is not claimed.

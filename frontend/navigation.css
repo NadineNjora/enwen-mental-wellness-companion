@@ -52,6 +52,11 @@ body.signed-in .card {
   background: var(--paper);
 }
 
+@media (min-width: 1000px) {
+  #app-nav { gap: 3px; }
+  #app-nav a { padding-inline: 11px; }
+}
+
 #app-nav a[aria-current="page"] {
   background: var(--ink);
   color: white;

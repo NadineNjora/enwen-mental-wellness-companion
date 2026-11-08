@@ -19,9 +19,11 @@
   <link rel="stylesheet" href="/static/feature_updates.css?v=20261105-refine">
 
 <script src="/static/mood_chart.js?v=20261105-refine" defer></script>
-<script src="/static/app.js?v=20261108-context" defer></script>
+<script src="/static/app.js?v=20261108-community" defer></script>
 <script src="/static/mood-insights.js?v=20261108-context" defer></script>
 <link rel="stylesheet" href="/static/mood-insights.css?v=20261108-context">
+<script src="/static/community.js?v=20261108" defer></script>
+<link rel="stylesheet" href="/static/community.css?v=20261108">
 <script src="/static/journals.js?v=20261105-refine" defer></script>
   <script src="/static/trusted-contact.js?v=20261105-refine" defer></script>
   <script src="/static/live-contacts.js?v=20261108" defer></script>
@@ -33,7 +35,7 @@
   <link rel="stylesheet" href="/static/safety_support.css?v=20261106-safety">
   <script src="/static/chat.js?v=20261107-manage" defer></script>
   <link rel="stylesheet" href="/static/chat.css?v=20261107-manage">
-<script src="/static/navigation.js?v=20261108-context" defer></script>
+<script src="/static/navigation.js?v=20261108-community" defer></script>
   <script src="/static/session.js?v=20261106-session" defer></script>
   <link rel="stylesheet" href="/static/wellness-tools.css?v=20261105-refine">
   <link rel="stylesheet" href="/static/trusted-contact.css?v=20261105-refine">
@@ -53,6 +55,7 @@
       <a href="#/check-in" data-route="check-in">Check-in</a>
       <a href="#/mood-history" data-route="mood-history">History</a>
       <a href="#/journal" data-route="journal">Journal</a>
+      <a href="#/community" data-route="community">Community</a>
       <a href="#/chat" data-route="chat">Let's talk</a>
       <a href="#/resources" data-route="resources">Resources</a>
       <a href="#/pause" data-route="pause">Take a pause</a>
@@ -399,6 +402,23 @@
             <button id="history-prev" type="button" disabled>← Newer entries</button>
             <button id="history-next" type="button" disabled>Older entries →</button>
           </div>
+        </section>
+
+        <section id="page-community" class="app-page community-page" data-page="community" aria-labelledby="community-title" hidden>
+          <p class="community-eyebrow">The community garden 🌻</p>
+          <h2 id="community-title">A little less alone.</h2>
+          <p class="muted">Shared reflections, gently held. Read at your pace. Share only what you choose.</p>
+          <div class="community-tabs" aria-label="Community views">
+            <button type="button" id="community-feed-tab">Read together</button><button type="button" id="community-write-tab">Share a reflection</button><button type="button" id="community-mine-tab">My sharing</button><button type="button" id="community-review-tab" hidden>Moderation</button>
+          </div>
+          <p id="community-status" class="status" role="status" aria-live="polite"></p>
+          <aside id="community-support" class="community-support" hidden><h3>A little human support, first.</h3><p>This submission is held out of the feed for support review. If it describes how you feel right now, reach out to someone you trust or use the human-support resources. Community moderation is not continuously monitored and does not send contact alerts.</p><a href="#/resources">Find human support →</a><a href="#/pause">Take a grounding pause →</a></aside>
+          <section id="community-feed-view"><div class="community-section-heading"><h3>Reflections from fellow students 🌱</h3><button type="button" id="community-refresh">Refresh</button></div><p class="small-note">Account names are hidden from peers. Every published reflection and response has passed community moderation; that is not clinical approval.</p><div id="community-feed" class="community-grid"></div><div class="community-actions"><button type="button" id="community-feed-prev">← Newer</button><button type="button" id="community-feed-next">Older →</button></div></section>
+          <section id="community-write-view" hidden><h3>A reflection you choose to share.</h3><p>This is a separate community submission. Your private journal stays private.</p><form id="community-post-form"><fieldset id="community-post-fields" disabled><legend>Your shared reflection</legend><label for="community-post-title">A title for this moment</label><input id="community-post-title" maxlength="120" required placeholder="A small win between deadlines"><label for="community-post-content">What would you like to share?</label><textarea id="community-post-content" rows="6" maxlength="2000" required placeholder="A thought, a moment, something that helped you feel a little more like yourself…"></textarea><p class="small-note">Up to 2,000 characters. Leave out names, contact details and identifying information.</p><p id="community-post-notice" class="community-notice"></p><label class="community-ack"><input id="community-post-ack" type="checkbox" required><span>I have read this notice and choose to submit this reflection for community review.</span></label><button type="submit">Submit for review 🌼</button></fieldset></form></section>
+          <section id="community-mine-view" hidden><div class="community-section-heading"><h3>What you’ve chosen to share</h3><button type="button" id="community-mine-refresh">Refresh my sharing</button></div><p class="small-note">Pending and declined submissions are visible here to you. Withdrawing removes content from the shared feed; your submission and review history are retained.</p><div id="community-mine" class="community-grid"></div><div class="community-actions"><button type="button" id="community-mine-prev">← Newer</button><button type="button" id="community-mine-next">Older →</button></div></section>
+          <section id="community-detail-view" hidden><button type="button" id="community-back">← Back to reflections</button><article id="community-detail" class="community-detail"></article><h3>A little encouragement 🫶</h3><div id="community-feedback"></div><div class="community-actions"><button type="button" id="community-feedback-prev">← Earlier responses</button><button type="button" id="community-feedback-next">More responses →</button></div><form id="community-feedback-form"><fieldset id="community-feedback-fields" disabled><legend>Leave a supportive response</legend><label for="community-feedback-content">What would you like them to hear?</label><textarea id="community-feedback-content" maxlength="500" rows="3" required placeholder="Thank you for sharing. Something in your reflection resonated with me…"></textarea><p class="small-note">Up to 500 characters. Offer encouragement, not diagnoses, instructions or medical advice. Responses are reviewed before appearing.</p><p id="community-feedback-notice" class="community-notice"></p><label class="community-ack"><input id="community-feedback-ack" type="checkbox" required><span>I have read the sharing notice and choose to submit this response for review.</span></label><button type="submit">Send for review</button></fieldset></form></section>
+          <form id="community-report-form" class="community-report" hidden><h3 id="community-report-title">Report shared content</h3><label for="community-report-reason">What should a moderator review?</label><select id="community-report-reason" required><option value="">Choose a reason</option><option value="privacy">Identifying or private information</option><option value="unsafe">Unsafe content or advice</option><option value="harassment">Harassment or unkind content</option><option value="other">Another community concern</option></select><div class="community-actions"><button type="submit">Send report</button><button id="community-report-cancel" type="button">Cancel</button></div></form>
+          <section id="community-review-view" hidden><div class="community-section-heading"><h3>Community moderation</h3><button type="button" id="community-review-refresh">Refresh queue</button></div><p id="community-review-notice" class="community-notice"></p><p class="small-note">Up to 20 submissions are shown at a time, prioritising support flags and reports. Refresh after decisions. Another moderator must review your own submissions. This role does not open private student journals, moods or chats.</p><div id="community-queue" class="community-grid"></div></section>
         </section>
 
         <!-- JOURNAL -->
