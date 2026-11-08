@@ -22,6 +22,12 @@ The local FastAPI server was restarted with the restricted demonstration configu
 
 The main page, invitation response page, invitation script and personalised-suggestion endpoint returned 200. An ordinary synthetic Llama conversation completed and its response was saved in PostgreSQL. A verification client using a 55-second timeout stopped waiting before that result; the application allows up to 150 seconds for local requests. First-reply CPU latency remains a presentation consideration; no cloud or paid model fallback was enabled.
 
+### Follow-up: authorised real-email demonstration
+
+The recipient subsequently accepted the real invitation. At the user's explicit direction, the separate student permission was saved through the API and verified as enabled for that accepted enrollment. One authorised fictional chat test then returned HTTP 200 with urgent support and a provider_accepted email outcome. The subject was “ENWEN DEMO: automatic check-in test”; its fixed body reported no real emergency and included no private chat or journal text. The user confirmed receipt in the verified mailbox. No SMS was invoked. This verifies the restricted local demonstration email journey; it does not establish public deployment, emergency response or clinical detection accuracy.
+
+A read-only database check confirmed that the demonstration turn was saved with the support-interruption status, its conversation was paused, and exactly one email outbox record existed for that request with provider_accepted status. This check sent no additional email.
+
 ## Operator steps and limits
 
 1. Receive the deliberately requested real invitation in the verified mailbox.
