@@ -28,6 +28,7 @@ function endSession(message = "You are logged out of this page.") {
   clearTimeout(renewalTimer);
   resetMoodPanel();
   resetTrustedContactPanel();
+  window.enwenLiveContacts?.reset();
   window.enwenResources?.reset();
   window.enwenPause?.reset();
   window.enwenChat?.reset();

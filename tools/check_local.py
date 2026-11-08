@@ -42,7 +42,7 @@ def main():
             tables = set(inspect(connection).get_table_names())
         expected = {"users", "consents", "browser_sessions", "mood_entries", "journal_entries",
                     "trusted_contacts", "trusted_contact_invitations", "wellness_resources",
-                    "resource_bookmarks", "chat_conversations", "chat_turns", "deleted_chat_requests", "safety_alerts"}
+                    "resource_bookmarks", "chat_conversations", "chat_turns", "deleted_chat_requests", "safety_alerts", "live_contact_invitations"}
         missing = sorted(expected - tables)
         record("PostgreSQL", "not_ready" if missing else "ready",
                "Missing tables: " + ", ".join(missing) if missing else "Connected; expected tables exist. No student records were read.", True)
@@ -68,8 +68,14 @@ def main():
         record("Local test inbox", "not_ready", "Start Docker Desktop and the existing enwen-mailpit container for local invitation tests.")
     record("Live trusted-contact SMS", "not_implemented",
            "Automatic live contact alerts are not connected. Separate Brevo/Twilio/Africa's Talking own-phone test connectors exist; this check never invokes them.")
-    record("Real email", "not_verified",
-           "A separate Brevo own-mailbox test connector exists. Sender/account setup and a deliberate live test are still required; existing invitations use local Mailpit only.")
+    email_configured=bool(os.getenv("BREVO_API_KEY", "").strip() and os.getenv("EMAIL_FROM_ADDRESS", "").strip())
+    record("Real email", "configured" if email_configured else "not_ready",
+           "Checks configuration presence only, not delivery. The developer confirmed the earlier own-mailbox test. Practice invitations still use Mailpit.")
+    try:
+        invitation=local_json("/trusted-contact/live/notice")
+        record("Real contact invitations", "ready" if invitation.get("ready") is True else "not_ready", invitation.get("reason", "Check deployment and sender configuration."))
+    except (httpx.HTTPError,ValueError,AttributeError):
+        record("Real contact invitations", "not_ready", "Restart the updated app and check the public HTTPS response-page configuration.")
     record("Phone installation", "not_verified",
            "PWA files exist; phone use still needs a reachable HTTPS deployment and real-device testing.")
     result = dict(local_core_ready=all(item["status"] == "ready" for item in checks if item["required"]), checks=checks,

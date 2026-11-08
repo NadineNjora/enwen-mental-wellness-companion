@@ -4,6 +4,8 @@ ENWEN is a web-based, non-diagnostic mental-wellness companion for Kenyan univer
 
 ## Project status
 
+**Real email enrollment, 8 November:** Added separate live invitations with explicit student permission, recipient Accept/Decline and withdrawal, hashed expiring response links and durable duplicate-send protection. Own-mailbox email delivery was confirmed by the developer. Real invitations remain disabled pending public HTTPS deployment; automatic safety alerts and live SMS are not enabled. See [the enrollment checkpoint, tests and deployment dependency](docs/real-invitations-2026-11-08.md).
+
 **Brevo SMS option, 8 November:** Brevo is now selectable for the own-phone SMS connection test as well as the existing email test. Only the provider account has been created; sender approval, credits and live configuration are not confirmed. Existing Mailpit mail remains local. See [Brevo verification and configuration steps](docs/brevo-email-sms-2026-11-08.md).
 
 **Delivery options and screen coverage, 8 November:** Added Twilio as a selectable own-phone SMS test connector and a separate Brevo own-mailbox email test. Live sending remains disabled; existing Mailpit invitations are not redirected to real recipients. Added explicit phrase examples to the rule-based support screen and verified that flagged requests bypass ordinary AI replies. These are not automatic live alerts or validated risk detection. See [provider setup, test evidence and remaining delivery work](docs/delivery-options-2026-11-08.md).

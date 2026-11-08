@@ -22,6 +22,7 @@
 <script src="/static/app.js?v=20261106-session" defer></script>
 <script src="/static/journals.js?v=20261105-refine" defer></script>
   <script src="/static/trusted-contact.js?v=20261105-refine" defer></script>
+  <script src="/static/live-contacts.js?v=20261108" defer></script>
   <script src="/static/contact_setup.js?v=20261105-refine" defer></script>
   <script src="/static/resources.js?v=20261105-refine" defer></script>
   <script src="/static/pause.js?v=20261105-refine" defer></script>
@@ -224,6 +225,20 @@
             </fieldset>
           </form>
           <p id="contact-send-message" class="status" role="status" aria-live="polite"></p>
+          <section class="contact-setup-panel" aria-labelledby="live-contact-title">
+            <h3 id="live-contact-title">Invite your person by real email 🌼</h3>
+            <p>They can accept, decline or withdraw. This enrollment does not switch on automatic alerts.</p>
+            <button id="live-contact-refresh" type="button">Check real invitation status</button>
+            <p id="live-contact-details" role="status"></p>
+            <form id="live-contact-form"><fieldset id="live-contact-fields" disabled><legend>Your invitation</legend>
+              <div class="contact-setup-grid"><label>Their name<input id="live-contact-name" maxlength="100" required autocomplete="off"></label><label>Their email<input id="live-contact-email" type="email" maxlength="254" required autocomplete="off"></label></div>
+              <p id="live-contact-notice" class="contact-notice"></p>
+              <label class="contact-ack"><input id="live-contact-ack" type="checkbox" required><span>I have read and agree to this real-email invitation notice.</span></label>
+              <button type="submit">Send real invitation</button>
+            </fieldset></form>
+            <button id="live-contact-revoke" type="button" hidden>Withdraw enrollment</button>
+            <p id="live-contact-message" class="status" role="status"></p>
+          </section>
           <p class="small-note">After sending, open <a href="http://127.0.0.1:8025/" target="_blank" rel="noopener noreferrer">the local Mailpit inbox</a> on this computer, choose Accept or Decline in the invitation, then return and refresh the status. No mood or journal content is included.</p>
         </section>
 

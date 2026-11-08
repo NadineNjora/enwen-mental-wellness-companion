@@ -10,6 +10,7 @@ from init_resources import create_resources
 from auth_session_models import BrowserSession
 from chat_history_models import ChatConversation, ChatTurn, DeletedChatRequest
 from safety_models import SafetyAlert
+from live_contact_models import LiveContactInvitation
 
 
 def create_tables():
@@ -24,6 +25,7 @@ def create_tables():
         "chat_turns",
         "deleted_chat_requests",
         "safety_alerts",
+        "live_contact_invitations",
         "consents",
         "mood_entries",
         "journal_entries",
