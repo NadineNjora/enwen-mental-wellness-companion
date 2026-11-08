@@ -42,3 +42,12 @@ class ChatTurn(Base):
     safety_payload: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DeletedChatRequest(Base):
+    """Content-free replay guard: deleted requests must never regenerate/send again."""
+    __tablename__ = "deleted_chat_requests"
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.user_id"), primary_key=True)
+    request_id: Mapped[UUID] = mapped_column(primary_key=True)
+    deleted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

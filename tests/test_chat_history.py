@@ -8,7 +8,7 @@ from uuid import uuid4
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 import chat_history as history
 from authentication import AccountResponse, get_current_user
-from chat_history_models import ChatConversation, ChatTurn
+from chat_history_models import ChatConversation, ChatTurn, DeletedChatRequest
 from database import engine
 from models import User
 from fastapi import FastAPI, HTTPException
@@ -37,7 +37,7 @@ profiles = [AccountResponse(user_id=value, email=f"history-{number}@example.com"
             for number, value in enumerate((uid, other_uid))]
 current = [profiles[0]]
 app.dependency_overrides[get_current_user] = lambda: current[0]
-tables = [User.__table__, ChatConversation.__table__, ChatTurn.__table__]
+tables = [User.__table__, ChatConversation.__table__, ChatTurn.__table__, DeletedChatRequest.__table__]
 with engine.connect() as connection:
     public_tables = set(inspect(connection).get_table_names(schema="public"))
     tracked = [table.name for table in tables if table.name in public_tables]

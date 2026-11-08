@@ -24,12 +24,13 @@ function page({selection=null}={}) {
     setAttribute(name,value){this.attrs[name]=value;}
     getAttribute(name){return this.attrs[name] ?? null;}
     removeAttribute(name){delete this.attrs[name];}
+    focus(){this.focused=true;}
     querySelectorAll(tag){return this.children.flatMap(node=>[...(node.tagName===tag?[node]:[]),...node.querySelectorAll(tag)]);}
     reset(){nodes["chat-input"].value="";nodes["chat-consent"].checked=false;}
     async fire(name){for(const handler of this.handlers[name]||[])await handler({preventDefault(){}});}
     set innerHTML(value){throw new Error("HTML injection forbidden");}
   }
-  const ids=["chat-form","chat-fields","chat-input","chat-messages","chat-status","chat-consent","chat-history-list","chat-history-message","chat-history-prev","chat-history-next","chat-history-refresh","chat-clear","chat-support","chat-active-title","chat-notice","chat-consent-label"];
+  const ids=["chat-form","chat-fields","chat-input","chat-messages","chat-status","chat-consent","chat-history-list","chat-history-message","chat-history-prev","chat-history-next","chat-history-refresh","chat-clear","chat-support","chat-active-title","chat-notice","chat-consent-label","chat-manage","chat-rename","chat-delete","chat-rename-form","chat-name","chat-name-save","chat-name-cancel"];
   for(const id of ids)nodes[id]=new Node(id.includes("list")?"ul":id.includes("form")?"form":"div");
   let responder=(url,options)=>{
     if(url==="/chat/notice")return response(200,notice);
@@ -122,6 +123,84 @@ const texts=node=>[node.textContent,...node.children.map(texts)].join(" ");
       :response(200,{...saved(),messages:[{role:"assistant",content:"Final history page",turn_id:cid,status:"complete"}],turn_count:1,has_more:false,turn_offset:100});
   });await p.api.openConversation(cid);assert.ok(texts(p.nodes["chat-messages"]).includes("Final history page"));
   assert.ok(p.calls.some(call=>call.url.endsWith("offset=100")));checks.push("conversation history loads all turn pages before rendering");
+
+  p=page();await p.setup();assert.equal(p.nodes["chat-manage"].hidden,true);await p.api.openConversation(cid);
+  assert.equal(p.nodes["chat-manage"].hidden,false);await p.click("chat-rename");
+  assert.equal(p.nodes["chat-rename-form"].hidden,false);assert.equal(p.nodes["chat-name"].focused,true);
+  p.nodes["chat-name"].value="Unsaved new name";const renameBefore=p.calls.length;await p.click("chat-name-cancel");
+  assert.equal(p.calls.length,renameBefore);assert.equal(p.nodes["chat-rename-form"].hidden,true);
+  checks.push("management appears only for saved conversations and cancelling rename changes nothing");
+
+  p.nodes["chat-input"].value="Keep my journal-like draft";
+  await p.click("chat-rename");p.nodes["chat-name"].value="  My   exam week 🌷 ";
+  p.respond((url,options)=>options.method==="PATCH"?response(200,{...summary(),title:JSON.parse(options.body).title}):p.baseline(url,options));
+  await p.nodes["chat-rename-form"].fire("submit");await tick();
+  assert.equal(p.nodes["chat-active-title"].textContent,"My exam week 🌷");assert.equal(p.nodes["chat-input"].value,"Keep my journal-like draft");
+  assert.ok(texts(p.nodes["chat-messages"]).includes("Earlier synthetic reply"));assert.equal(p.nodes["chat-fields"].disabled,false);
+  checks.push("rename saves normalised Unicode name while preserving transcript and unsent draft");
+
+  await p.click("chat-rename");p.nodes["chat-name"].value="  ";const blankBefore=p.calls.length;await p.nodes["chat-rename-form"].fire("submit");
+  assert.equal(p.calls.length,blankBefore);assert.match(p.nodes["chat-status"].textContent,/1 and 80/);
+  checks.push("blank names rejected before any network request");
+
+  p=page({selection:cid});await p.setup();await p.click("chat-rename");p.nodes["chat-name"].value="Keep this requested name";
+  p.respond((url,options)=>options.method==="PATCH"?Promise.reject(new TypeError("Disconnected")):p.baseline(url,options));
+  await p.nodes["chat-rename-form"].fire("submit");assert.equal(p.nodes["chat-rename-form"].hidden,false);
+  assert.equal(p.nodes["chat-name"].value,"Keep this requested name");assert.equal(p.nodes["chat-active-title"].textContent,"Synthetic saved conversation");
+  assert.equal(p.calls.filter(call=>call.options.method==="PATCH").length,1);assert.match(p.nodes["chat-status"].textContent,/could not be confirmed/);
+  checks.push("uncertain rename retains requested name and never retries automatically");
+
+  p=page({selection:cid});await p.setup();p.nodes["chat-input"].value="Please keep my draft";p.confirm(false);const deleteBefore=p.calls.length;await p.click("chat-delete");
+  assert.equal(p.calls.length,deleteBefore);assert.equal(p.nodes["chat-input"].value,"Please keep my draft");assert.equal(p.storage.get("enwen.chat.conversation."+uid),cid);
+  checks.push("declining deletion preserves selected conversation and makes no request");
+
+  p.confirm(true);p.respond((url,options)=>options.method==="DELETE"?response(204,null):p.baseline(url,options));await p.click("chat-delete");
+  assert.equal(p.nodes["chat-messages"].children.length,0);assert.equal(p.nodes["chat-input"].value,"Please keep my draft");
+  assert.equal(p.storage.has("enwen.chat.conversation."+uid),false);assert.equal(p.nodes["chat-manage"].hidden,true);assert.equal(p.nodes["chat-fields"].disabled,false);
+  assert.equal(p.calls.filter(call=>call.url==="/chat").length,0);checks.push("confirmed deletion clears selected saved text but retains draft without sending it");
+
+  p=page({selection:cid});await p.setup();p.respond((url,options)=>options.method==="DELETE"?response(409,{detail:"Still processing"}):p.baseline(url,options));await p.click("chat-delete");
+  assert.ok(texts(p.nodes["chat-messages"]).includes("Earlier synthetic reply"));assert.equal(p.storage.get("enwen.chat.conversation."+uid),cid);
+  assert.match(p.nodes["chat-status"].textContent,/Still processing/);checks.push("pending-message refusal keeps visible transcript and selection");
+
+  p=page({selection:cid});await p.setup();p.nodes["chat-input"].value="Keep this draft too";
+  p.respond((url,options)=>options.method==="DELETE"?Promise.reject(new TypeError("Disconnected")):p.baseline(url,options));await p.click("chat-delete");
+  assert.ok(texts(p.nodes["chat-messages"]).includes("Earlier synthetic reply"));assert.equal(p.nodes["chat-input"].value,"Keep this draft too");
+  assert.equal(p.calls.filter(call=>call.options.method==="DELETE").length,1);assert.match(p.nodes["chat-status"].textContent,/could not be confirmed/);
+  checks.push("uncertain deletion keeps draft and transcript with no automatic retry or false success");
+
+  p=page({selection:cid});await p.setup();p.respond((url,options)=>options.method==="DELETE"?response(200,{unexpected:true}):p.baseline(url,options));await p.click("chat-delete");
+  assert.ok(texts(p.nodes["chat-messages"]).includes("Earlier synthetic reply"));assert.match(p.nodes["chat-status"].textContent,/could not be confirmed/);
+  checks.push("unexpected success payload does not falsely clear saved history");
+
+  p=page({selection:cid});await p.setup();p.respond((url,options)=>options.method==="DELETE"?response(404,{detail:"Not found"}):p.baseline(url,options));await p.click("chat-delete");
+  assert.equal(p.nodes["chat-messages"].children.length,0);assert.equal(p.storage.has("enwen.chat.conversation."+uid),false);
+  checks.push("manual retry after already-removed conversation safely clears stale selection");
+
+  p=page();p.respond((url,options)=>url.startsWith("/chat/conversations/")?response(200,{...saved(),safety_paused:true,messages:[{role:"assistant",content:"Synthetic support",safety:support,status:"crisis",turn_id:other}]})
+    :options.method==="DELETE"?response(204,null):p.baseline(url,options));
+  await p.setup();await p.api.openConversation(cid);
+  p.respond((url,options)=>options.method==="DELETE"?response(204,null):p.baseline(url,options));await p.click("chat-delete");
+  assert.equal(p.nodes["chat-messages"].children.length,0);assert.equal(p.nodes["chat-fields"].disabled,true);assert.equal(p.safetyCalls.length,1);
+  assert.match(p.nodes["chat-status"].textContent,/Human-support options stay open/);checks.push("deleting a paused transcript keeps human-support mode open");
+
+  p=page({selection:cid});await p.setup();let resolveDelete;
+  p.respond((url,options)=>options.method==="DELETE"?new Promise(done=>{resolveDelete=()=>done(response(204,null));}):p.baseline(url,options));
+  const removing=p.click("chat-delete");await tick();const mutateBefore=p.calls.length;await p.click("chat-delete");await p.api.openConversation(other);await p.send("Blocked while deleting");
+  assert.equal(p.calls.length,mutateBefore);assert.equal(p.nodes["chat-fields"].disabled,true);
+  await p.click("chat-support");resolveDelete();await removing;
+  assert.equal(p.nodes["chat-fields"].disabled,true);assert.equal(p.safetyCalls.length,1);
+  checks.push("mutation prevents duplicate deletion, switching and sending while human help stays accessible");
+
+  p=page({selection:cid});await p.setup();p.respond((url,options)=>options.method==="DELETE"?new Promise(done=>{resolveDelete=()=>done(response(204,null));}):p.baseline(url,options));
+  const logoutDelete=p.click("chat-delete");await tick();p.api.reset();p.context.accessToken="another-session";resolveDelete();await logoutDelete;
+  assert.equal(p.nodes["chat-messages"].children.length,0);assert.equal(p.nodes["chat-status"].textContent,"");assert.equal(p.nodes["chat-manage"].hidden,true);
+  checks.push("late deletion response after logout cannot alter the next account screen");
+
+  p=page({selection:cid});await p.setup();await p.click("chat-rename");p.nodes["chat-name"].value='<img src=x onerror="bad()">';
+  p.respond((url,options)=>options.method==="PATCH"?response(200,{...summary(),title:JSON.parse(options.body).title}):p.baseline(url,options));
+  await p.nodes["chat-rename-form"].fire("submit");assert.equal(p.nodes["chat-active-title"].textContent,'<img src=x onerror="bad()">');
+  assert.equal(p.nodes["chat-active-title"].children.length,0);checks.push("renamed markup is rendered as plain text");
 
   console.log(JSON.stringify({passed:checks.length,checks,scope:"Synthetic DOM/API only; no private records, AI requests or notifications."},null,2));
 })().catch(error=>{console.error(error);process.exitCode=1;});

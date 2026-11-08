@@ -6,10 +6,12 @@
   const historyList = el("chat-history-list"), historyMessage = el("chat-history-message");
   const previous = el("chat-history-prev"), next = el("chat-history-next"), refresh = el("chat-history-refresh");
   const newButton = el("chat-clear"), supportButton = el("chat-support"), title = el("chat-active-title");
+  const managePanel = el("chat-manage"), renameButton = el("chat-rename"), deleteButton = el("chat-delete");
+  const renameForm = el("chat-rename-form"), nameInput = el("chat-name"), saveName = el("chat-name-save"), cancelName = el("chat-name-cancel");
   let generation = 0, view = 0, noticeVersion = null, wellness = false, userId = null;
   let conversationId = null, conversationPaused = false, manualPaused = false, visibleCount = 0;
   let requestTimeout = 35000, pendingAttempt = null, historyOffset = 0, historyHasNext = false;
-  let sending = false, reading = false, listing = false, helping = false;
+  let sending = false, reading = false, listing = false, helping = false, managing = false;
   const jobs = new Map(), renderedTurns = new Set();
   const validId = value => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
   const status = (text = "", error = false) => { message.textContent = text; message.classList.toggle("error", error); };
@@ -25,13 +27,15 @@
     } catch { /* Storage may be disabled; database history still works. */ }
   }
   function controls() {
-    fields.disabled = !wellness || !noticeVersion || sending || reading || conversationPaused || manualPaused || Boolean(window.enwenSafety?.active());
-    newButton.disabled = !wellness || sending || reading;
-    refresh.disabled = !wellness || listing;
-    previous.disabled = !wellness || listing || historyOffset === 0;
-    next.disabled = !wellness || listing || !historyHasNext;
+    fields.disabled = !wellness || !noticeVersion || sending || reading || managing || conversationPaused || manualPaused || Boolean(window.enwenSafety?.active());
+    newButton.disabled = !wellness || sending || reading || managing;
+    refresh.disabled = !wellness || listing || managing;
+    previous.disabled = !wellness || listing || managing || historyOffset === 0;
+    next.disabled = !wellness || listing || managing || !historyHasNext;
+    managePanel.hidden = !conversationId;
+    renameButton.disabled = deleteButton.disabled = saveName.disabled = cancelName.disabled = nameInput.disabled = !wellness || !conversationId || sending || reading || managing || helping;
     supportButton.disabled = helping;
-    for (const button of historyList.querySelectorAll("button")) button.disabled = !wellness || sending || reading;
+    for (const button of historyList.querySelectorAll("button")) button.disabled = !wellness || sending || reading || managing;
   }
   function begin(lane, timeout = 15000, boundToView = true) {
     jobs.get(lane)?.controller.abort();
@@ -50,11 +54,12 @@
     for (const job of jobs.values()) { job.controller.abort(); clearTimeout(job.timer); }
     jobs.clear();
     conversationId = null; saveSelection(); userId = null;
-    conversationPaused = manualPaused = wellness = sending = reading = listing = helping = false;
+    conversationPaused = manualPaused = wellness = sending = reading = listing = helping = managing = false;
     visibleCount = historyOffset = 0; historyHasNext = false; noticeVersion = null; pendingAttempt = null;
     renderedTurns.clear(); form.reset(); agree.checked = false; thread.replaceChildren(); historyList.replaceChildren();
     el("chat-notice").textContent = ""; el("chat-consent-label").textContent = "Read the AI processing notice before sending.";
     title.textContent = "A new conversation"; historyMessage.textContent = ""; status("");
+    renameForm.hidden = true; nameInput.value = "";
     window.enwenSafety?.reset(); controls();
   }
   async function request(path, job, options = {}) {
@@ -68,6 +73,7 @@
       const error = new Error(typeof data?.detail === "string" ? data.detail : "The conversation request could not be completed.");
       error.status = response.status; throw error;
     }
+    if (options.expectedStatus && response.status !== options.expectedStatus) throw new Error("The requested change could not be confirmed. Refresh history before trying again.");
     return data;
   }
   function blockForConsent() {
@@ -158,7 +164,7 @@
     } finally { if (job.session === generation && jobs.get("history") === job) listing = false; finish(job); controls(); }
   }
   async function openConversation(id, {confirmDraft = true, restoring = false} = {}) {
-    if (!wellness || !validId(id) || sending || reading) return;
+    if (!wellness || !validId(id) || sending || reading || managing) return;
     if (confirmDraft && input.value.trim() && !window.confirm("Switch conversations and discard the unsaved draft? Saved messages will stay in history.")) return;
     cancelView(); const job = begin("conversation", 30000); reading = true; controls();
     status("Loading this private conversation...");
@@ -185,6 +191,7 @@
       }
       if (!job.current()) return;
       conversationId = id; saveSelection(); input.value = ""; pendingAttempt = null;
+      renameForm.hidden = true; nameInput.value = "";
       thread.replaceChildren(); renderedTurns.clear(); visibleCount = 0;
       let intervention = null;
       for (const item of messages) {
@@ -220,9 +227,74 @@
     pendingAttempt = {text, conversationId, requestId:window.crypto.randomUUID()};
     return pendingAttempt.requestId;
   }
+  renameButton.addEventListener("click", () => {
+    if (renameButton.disabled) return;
+    nameInput.value = title.textContent;
+    renameForm.hidden = false;
+    nameInput.focus();
+  });
+  cancelName.addEventListener("click", () => {
+    if (cancelName.disabled) return;
+    renameForm.hidden = true; nameInput.value = ""; renameButton.focus();
+  });
+  renameForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (saveName.disabled) return;
+    const name = nameInput.value.replace(/\s+/g, " ").trim();
+    if (!name || name.length > 80) { status("Choose a conversation name between 1 and 80 characters.", true); return; }
+    const id = conversationId, job = begin("manage", 15000, false);
+    cancel("history"); listing = false; managing = true; controls(); status("Saving this conversation's name...");
+    try {
+      const data = await request("/chat/conversations/" + encodeURIComponent(id), job, {method:"PATCH", body:{title:name}});
+      if (!job.current()) return;
+      if (data?.conversation_id !== id || typeof data.title !== "string") throw new Error("The updated name could not be confirmed. Refresh history before trying again.");
+      title.textContent = data.title; renameForm.hidden = true; nameInput.value = "";
+      status("Conversation renamed. Your saved messages and unsaved draft are unchanged.");
+      await loadHistory();
+    } catch (error) {
+      if (job.current()) status(["AbortError", "TypeError"].includes(error.name)
+        ? "The name change could not be confirmed. Refresh history before trying again; nothing was automatically retried." : error.message, true);
+    } finally {
+      if (job.session === generation && jobs.get("manage") === job) managing = false;
+      finish(job); controls();
+    }
+  });
+  deleteButton.addEventListener("click", async () => {
+    if (deleteButton.disabled) return;
+    if (!window.confirm("Delete this saved conversation and all of its messages from ENWEN's active database? This cannot be undone here. Your unsaved draft will be kept. Separate notification records and minimal request identifiers remain; backups are not erased.")) return;
+    const id = conversationId, job = begin("manage", 15000, false);
+    cancel("history"); listing = false; managing = true; controls(); status("Removing this saved conversation...");
+    try {
+      await request("/chat/conversations/" + encodeURIComponent(id), job, {method:"DELETE", expectedStatus:204});
+      if (!job.current()) return;
+      // A missing record is also harmless on a manual retry after an uncertain
+      // deletion. Never resend messages or claim notifications were withdrawn.
+      releaseDeletedConversation();
+      await loadHistory(0);
+    } catch (error) {
+      if (job.current()) {
+        if (error.status === 404) { releaseDeletedConversation(); await loadHistory(0); }
+        else status(["AbortError", "TypeError"].includes(error.name)
+          ? "Deletion could not be confirmed. Your draft and this screen are kept. Refresh history before trying again; no automatic retry was made." : error.message, true);
+      }
+    } finally {
+      if (job.session === generation && jobs.get("manage") === job) managing = false;
+      finish(job); controls();
+    }
+  });
+  function releaseDeletedConversation() {
+    // Removing history does not establish that somebody is safe. Keep any
+    // already-visible support mode open until New conversation is chosen.
+    manualPaused = manualPaused || conversationPaused || Boolean(window.enwenSafety?.active());
+    conversationId = null; saveSelection(); pendingAttempt = null; conversationPaused = false;
+    thread.replaceChildren(); renderedTurns.clear(); visibleCount = 0;
+    title.textContent = "A new conversation"; renameForm.hidden = true; nameInput.value = "";
+    status(manualPaused ? "Saved messages removed. Human-support options stay open. Choose New conversation to return to ordinary AI."
+      : "Saved conversation removed. Your unsaved draft is kept; sending it would start a new conversation.");
+  }
   form.addEventListener("submit", async event => {
     event.preventDefault();
-    if (!wellness || !accessToken || !noticeVersion || sending || reading || conversationPaused || manualPaused || window.enwenSafety?.active()) return;
+    if (!wellness || !accessToken || !noticeVersion || sending || reading || managing || conversationPaused || manualPaused || window.enwenSafety?.active()) return;
     const text = input.value.trim(); if (!text) return;
     if (text.length > 2000) { status("Please keep this message within 2,000 characters.", true); return; }
     let id;
@@ -263,11 +335,12 @@
     } finally { if (job.session === generation && jobs.get("send") === job) sending = false; finish(job); controls(); }
   });
   newButton.addEventListener("click", () => {
-    if (!wellness || sending || reading) return;
+    if (!wellness || sending || reading || managing) return;
     if (input.value.trim() && !window.confirm("Start a new conversation and discard this unsaved draft? Saved history is kept.")) return;
     cancelView(); conversationId = null; saveSelection(); pendingAttempt = null;
     conversationPaused = manualPaused = false; visibleCount = 0; renderedTurns.clear();
     input.value = ""; thread.replaceChildren(); title.textContent = "A new conversation";
+    renameForm.hidden = true; nameInput.value = "";
     window.enwenSafety?.reset(); status("A fresh conversation. Earlier saved messages are still in history."); controls();
   });
   supportButton.addEventListener("click", async () => {

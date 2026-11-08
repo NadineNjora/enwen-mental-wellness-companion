@@ -51,4 +51,4 @@ The screening rules do not understand every expression, language, typo, quotatio
 - Befrienders Kenya details: verified with the connected local-helpline lookup on 6 November 2026, including Monday–Friday 9 am–5 pm and its exact call/website links. No 24-hour availability was inferred.
 - Scope of prediction claims: NICE NG225 recommendations on not using scales/tools to predict future suicide or repeated self-harm, https://www.nice.org.uk/guidance/ng225/chapter/recommendations .
 
-All changes are local and uncommitted. Existing .env secrets remain ignored by Git. No real SMS, public publishing or GitHub push occurred in this checkpoint.
+This work was initially local and uncommitted, then included in local commit e51a4e1. Existing .env secrets remain ignored by Git. No real SMS, public publishing or GitHub push occurred in that checkpoint. The 8 November saved-chat management checkpoint adds deliberate transcript removal with content-free replay protection; it does not enable real SMS.

@@ -14,7 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from authentication import AccountResponse, get_current_user
-from chat_history_models import ChatConversation, ChatTurn
+from chat_history_models import ChatConversation, ChatTurn, DeletedChatRequest
 from database import engine
 from models import User
 
@@ -80,6 +80,8 @@ def claim_turn(user_id, request_id, user_text, conversation_id=None, *,
             with session.begin():
                 if session.scalar(select(User.user_id).where(User.user_id == user_id).with_for_update()) is None:
                     raise HTTPException(401, "Please log in again.")
+                if session.get(DeletedChatRequest, (user_id, request_id)) is not None:
+                    raise HTTPException(410, "This message belonged to a deleted conversation. It was not sent again. Start a new conversation if you choose to write a new message.")
                 previous = session.scalar(select(ChatTurn).where(ChatTurn.user_id == user_id,
                                                                   ChatTurn.request_id == request_id))
                 if previous is not None:

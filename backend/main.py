@@ -15,6 +15,7 @@ from contacts_invitations import router as contact_invitations_router
 from resources import router as resources_router
 from ai_chat import router as chat_router
 from chat_history import router as chat_history_router
+from chat_management import router as chat_management_router
 from safety_screen import router as safety_router
 from safety_alerts import router as safety_alert_router
 
@@ -27,6 +28,7 @@ app.include_router(contact_invitations_router)
 app.include_router(resources_router)
 app.include_router(chat_router)
 app.include_router(chat_history_router)
+app.include_router(chat_management_router)
 app.include_router(safety_router)
 app.include_router(safety_alert_router)
 

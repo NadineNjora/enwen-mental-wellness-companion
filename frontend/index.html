@@ -27,8 +27,8 @@
   <script src="/static/pause.js?v=20261105-refine" defer></script>
   <script src="/static/safety_support.js?v=20261106-safety" defer></script>
   <link rel="stylesheet" href="/static/safety_support.css?v=20261106-safety">
-  <script src="/static/chat.js?v=20261107-history-safety" defer></script>
-  <link rel="stylesheet" href="/static/chat.css?v=20261107-history-safety">
+  <script src="/static/chat.js?v=20261107-manage" defer></script>
+  <link rel="stylesheet" href="/static/chat.css?v=20261107-manage">
 <script src="/static/navigation.js?v=20261106-session" defer></script>
   <script src="/static/session.js?v=20261106-session" defer></script>
   <link rel="stylesheet" href="/static/wellness-tools.css?v=20261105-refine">
@@ -575,6 +575,19 @@
           </section>
           <div class="chat-controls"><button id="chat-clear" type="button">New conversation</button><button id="chat-support" type="button">Get human support now</button></div>
           <p id="chat-active-title" class="small-note">New conversation</p>
+          <section id="chat-manage" class="chat-manage" aria-label="Manage this saved conversation" hidden>
+            <div class="chat-controls">
+              <button id="chat-rename" type="button">Rename conversation ✏️</button>
+              <button id="chat-delete" type="button" class="chat-delete">Delete conversation</button>
+            </div>
+            <form id="chat-rename-form" hidden>
+              <label for="chat-name">Give this conversation a name</label>
+              <input id="chat-name" type="text" maxlength="80" required autocomplete="off" aria-describedby="chat-name-help">
+              <p id="chat-name-help" class="small-note">Up to 80 characters. Choose a name that feels right for you.</p>
+              <div class="chat-controls"><button id="chat-name-save" type="submit">Save name</button><button id="chat-name-cancel" type="button">Cancel</button></div>
+            </form>
+            <p class="small-note">Deleting removes this conversation and its messages from ENWEN's active database. Minimal request identifiers and separate notification records remain; existing backups are not erased.</p>
+          </section>
           <div class="chat-notice"><p id="chat-notice"></p></div>
           <ol id="chat-messages" class="chat-thread" aria-label="Your conversation" aria-live="polite"></ol>
           <form id="chat-form">
