@@ -21,23 +21,63 @@ def configuration():
             "recipient":os.getenv("SMS_TEST_RECIPIENT", "").strip()}
 
 
+def sms_provider():
+    selected = os.getenv("SMS_PROVIDER", "africastalking").strip().lower()
+    if selected not in ("africastalking", "twilio"):
+        raise SmsError("Choose SMS_PROVIDER=twilio or africastalking. No provider fallback is attempted.")
+    return selected
+
+
 def validate_configuration():
     values = configuration()
     if os.getenv("SMS_MODE", "disabled").lower() != "live" or os.getenv("LIVE_SMS_ENABLED", "false").lower() != "true":
         raise SmsError("Live SMS is disabled. Set SMS_MODE=live and LIVE_SMS_ENABLED=true only when ready for a paid connection test.")
+    if not re.fullmatch(r"\+254[17]\d{8}", values["recipient"]):
+        raise SmsError("Set SMS_TEST_RECIPIENT to your own Kenyan mobile in +254 format, with no spaces.")
+    if sms_provider() == "twilio":
+        account = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+        token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+        sender = os.getenv("TWILIO_FROM", "").strip()
+        if not re.fullmatch(r"AC[0-9a-fA-F]{32}", account) or not re.fullmatch(r"[0-9a-fA-F]{32}", token):
+            raise SmsError("Set your TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN privately in backend/.env.")
+        if not (re.fullmatch(r"\+[1-9]\d{6,14}", sender) or re.fullmatch(r"(?=.{1,11}$)(?=.*[A-Za-z])[A-Za-z0-9]+", sender)):
+            raise SmsError("Set TWILIO_FROM to the number or sender authorised by Twilio for this route.")
+        if os.getenv("TWILIO_SENDER_APPROVED", "false").strip().lower() != "true":
+            raise SmsError("Confirm the sender and Kenyan route are authorised in Twilio before setting TWILIO_SENDER_APPROVED=true.")
+        return {"provider":"twilio", "account":account, "token":token, "sender":sender, "recipient":values["recipient"]}
     if not values["username"] or values["username"].lower() == "sandbox" or not values["api_key"]:
         raise SmsError("Set your live AT_USERNAME and AT_API_KEY. Sandbox credentials cannot send to a real phone.")
     if not values["sender"]:
         raise SmsError("Set AT_SENDER_ID to the sender authorised by your provider.")
-    if not re.fullmatch(r"\+254[17]\d{8}", values["recipient"]):
-        raise SmsError("Set SMS_TEST_RECIPIENT to your own Kenyan mobile in +254 format, with no spaces.")
     return values
+
+
+def _send_twilio_test(values):
+    try:
+        with httpx.Client(timeout=httpx.Timeout(15, connect=5), follow_redirects=False, trust_env=False) as client:
+            reply = client.post("https://api.twilio.com/2010-04-01/Accounts/" + values["account"] + "/Messages.json",
+                auth=httpx.BasicAuth(values["account"], values["token"]), headers={"Accept":"application/json"},
+                data={"To":values["recipient"], "From":values["sender"], "Body":TEST_MESSAGE})
+        if reply.status_code >= 500 or reply.status_code in (408, 429):
+            raise SmsError("SMS acceptance is uncertain. Check Twilio and your phone before trying again. Nothing was retried.")
+        if reply.status_code != 201:
+            raise SmsError("Twilio did not accept this SMS. Check whether your account allows custom message text, recipient verification, Kenyan route permissions, sender approval and credit. Nothing was retried.")
+        data = reply.json()
+        reference = data.get("sid")
+        if (not isinstance(reference, str) or not re.fullmatch(r"SM[0-9a-fA-F]{32}", reference)
+                or data.get("status") not in ("accepted", "queued", "sending", "sent", "delivered")):
+            raise SmsError("Twilio acceptance could not be confirmed. Check its dashboard before retrying.")
+        return {"provider":"twilio", "status":"provider_accepted", "message_id":reference, "delivery_confirmed":False}
+    except (httpx.HTTPError, ValueError, TypeError, AttributeError):
+        raise SmsError("SMS delivery is uncertain. Check Twilio and your phone before retrying. No automatic retry was made.") from None
 
 
 def send_connection_test(*, confirmed=False):
     if confirmed is not True:
         raise SmsError("Explicit confirmation is required before sending a real SMS.")
     values = validate_configuration()
+    if values.get("provider") == "twilio":
+        return _send_twilio_test(values)
     try:
         with httpx.Client(timeout=httpx.Timeout(15, connect=5), follow_redirects=False) as client:
             reply = client.post("https://api.africastalking.com/version1/messaging",

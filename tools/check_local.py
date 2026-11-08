@@ -67,7 +67,9 @@ def main():
     except httpx.HTTPError:
         record("Local test inbox", "not_ready", "Start Docker Desktop and the existing enwen-mailpit container for local invitation tests.")
     record("Live trusted-contact SMS", "not_implemented",
-           "Automatic live contact alerts are not connected. A separate own-phone connection-test script exists; it is not invoked by this check.")
+           "Automatic live contact alerts are not connected. Separate Twilio/Africa's Talking own-phone test connectors exist; this check never invokes them.")
+    record("Real email", "not_verified",
+           "A separate Brevo own-mailbox test connector exists. Sender/account setup and a deliberate live test are still required; existing invitations use local Mailpit only.")
     record("Phone installation", "not_verified",
            "PWA files exist; phone use still needs a reachable HTTPS deployment and real-device testing.")
     result = dict(local_core_ready=all(item["status"] == "ready" for item in checks if item["required"]), checks=checks,

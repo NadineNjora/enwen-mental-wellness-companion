@@ -4,6 +4,8 @@ ENWEN is a web-based, non-diagnostic mental-wellness companion for Kenyan univer
 
 ## Project status
 
+**Delivery options and screen coverage, 8 November:** Added Twilio as a selectable own-phone SMS test connector and a separate Brevo own-mailbox email test. Live sending remains disabled; existing Mailpit invitations are not redirected to real recipients. Added explicit phrase examples to the rule-based support screen and verified that flagged requests bypass ordinary AI replies. These are not automatic live alerts or validated risk detection. See [provider setup, test evidence and remaining delivery work](docs/delivery-options-2026-11-08.md).
+
 **Saved-chat controls, 8 November:** Students can rename and deliberately remove a saved conversation, with ownership checks, draft preservation and content-free replay protection. Deleting a transcript keeps separate notification outcomes and any visible support mode intact. Existing conversations were preserved during verification. See [the management checkpoint and local run instructions](docs/chat-management-2026-11-08.md). Run `backend/.venv/Scripts/python.exe tools/check_local.py` from the project root for a read-only service/schema check; it does not send messages or read student records.
 
 **PWA preparation, 7 November:** Added an installation manifest, public flower icons, browser installation guidance and a public-only offline fallback. Private records and submitted requests are never cached or queued by the worker. Phone installation still needs a reachable HTTPS deployment and real-device testing; backend/Ollama remain on this computer. See [the PWA checkpoint and limits](docs/pwa-checkpoint-2026-11-07.md).

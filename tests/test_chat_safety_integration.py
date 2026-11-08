@@ -92,6 +92,12 @@ with engine.connect() as connection:
             unack=client.post("/chat",json=payload("I want to jump off a building",ack=False)).json()
             check("urgent help works without processing acknowledgement",unack["safety"]["level"]=="urgent" and unack["history_saved"] is False)
             check("no acknowledgement means no saved health text or notification",connection.scalar(select(func.count()).select_from(ChatTurn))==count_before and connection.scalar(select(func.count()).select_from(SafetyAlert))==1)
+            for example in ("I don't want to live anymore", "I'm thinking of ending my life", "I've just taken an overdose", "I have a plan to kill myself"):
+                with patch.object(ai_chat,"connection_configured",return_value=False):
+                    extra=client.post("/chat",json=payload("Fictional test: "+example,ack=False)).json()
+                check("expanded phrase pauses without model: "+example,extra["safety"]["level"]=="urgent" and not extra["history_saved"])
+            check("expanded examples made no model calls",normal.call_count==0)
+            check("unacknowledged examples created no alerts or transcripts",connection.scalar(select(func.count()).select_from(ChatTurn))==count_before and connection.scalar(select(func.count()).select_from(SafetyAlert))==1)
             with patch.object(ai_chat,"claim_turn",side_effect=HTTPException(503,"Synthetic DB unavailable")):
                 unavailable=client.post("/chat",json=payload("I am about to jump off the roof")).json()
                 check("recording failure never hides support",unavailable["safety"]["level"]=="urgent" and unavailable["history_saved"] is False)

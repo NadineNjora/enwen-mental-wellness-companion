@@ -31,6 +31,7 @@ def normalise(text):
     text = re.sub(r"\b(?:wnat|wan't)\b", "want", text)
     text = re.sub(r"\b(?:buidling|bulding|buliding)\b", "building", text)
     text = re.sub(r"\b(?:myslef|mysef)\b", "myself", text)
+    text = re.sub(r"\bsuicidial\b", "suicidal", text)
     text = re.sub(r"\bjump\s*off\b", "jump off", text)
     return re.sub(r"\s+", " ", text).strip()
 
@@ -39,8 +40,8 @@ def support_signal(text):
     value = normalise(text)
     # Negation is scoped to a clause, so a later 'but I am about to...' still triggers.
     clauses = re.split(r"[.!?;\n]+|\bbut\b|\bhowever\b", value)
-    action = r"(?:kill\s+myself|end\s+my\s+life(?!\s+drawing)|take\s+my\s+own\s+life|hurt\s+myself|harm\s+myself|die(?!\s+(?:my\s+hair|laughing))|jump\s+(?:off|from)\s+(?:(?:a|the|this)\s+)?(?:(?:tall|high|nearby)\s+)?(?:building|roof|bridge|balcony|ledge)|overdose|cut\s+myself)\b"
-    intent = r"\bi\s+(?:(?:am|'m)\s+)?(?:want\s+to|wanna|am\s+going\s+to|going\s+to|am\s+about\s+to|about\s+to|will|plan\s+to|intend\s+to|might|need\s+to|gonna)\s+"
+    action = r"(?:kill(?:ing)?\s+myself|end(?:ing)?\s+my\s+life(?!\s+drawing)|(?:take|taking)\s+my\s+own\s+life|hurt(?:ing)?\s+myself|harm(?:ing)?\s+myself|(?:die|dying)(?!\s+(?:my\s+hair|laughing))|jump(?:ing)?\s+(?:off|from)\s+(?:(?:a|the|this)\s+)?(?:(?:tall|high|nearby)\s+)?(?:building|roof|bridge|balcony|ledge)|overdos(?:e|ing)|cut(?:ting)?\s+myself)\b"
+    intent = r"\bi\s+(?:(?:am|'m)\s+)?(?:want\s+to|wanna|am\s+going\s+to|going\s+to|am\s+about\s+to|about\s+to|will|plan\s+to|intend\s+to|might|need\s+to|gonna|have\s+a\s+plan\s+to|planning\s+to|thinking\s+(?:of|about)|keep\s+thinking\s+about)\s+"
     intent = intent.replace(r"\bi\s+", r"\bi(?:'m)?\s+")
     negative = r"\b(?:do\s+not|don't|dont|not|never|wouldn't|would\s+not)\s+(?:(?:want|plan|intend|going|about)\s+(?:to\s+)?)?"
     for clause in clauses:
@@ -48,6 +49,18 @@ def support_signal(text):
         scoped = re.sub(negative + action, " ", clause)
         if re.search(intent + r"(?:(?:really|just|actually|finally|now)\s+){0,3}" + action, scoped):
             return "explicit_action_language"
+        # Additional explicit first-person examples. These remain rules, not
+        # model-based diagnosis or a claim to understand every indirect phrase.
+        if re.search(r"\bi\s+(?:don't|dont|do not)\s+want\s+to\s+(?:be alive\b|live(?=\s+(?:anymore|any longer|at all)\b|$))", clause):
+            return "explicit_safety_language"
+        if re.search(r"\bi\s+wish\s+i\s+(?:was|were)\s+dead\b(?!\s+(?:tired|wrong|serious|set)\b)", scoped):
+            return "explicit_safety_language"
+        if re.search(r"\bi(?:'m| am)?\s+(?:considering|thinking (?:of|about))\s+suicide\b(?!\s+(?:prevention|awareness|research|statistics|education)\b)", scoped):
+            return "explicit_safety_language"
+        if re.search(r"\bi\s+have\s+thoughts\s+of\s+suicide\b(?!\s+(?:prevention|awareness|research|statistics|education)\b)", scoped):
+            return "explicit_safety_language"
+        if re.search(r"\bi(?:'ve| have)\s+(?:just\s+)?taken\s+(?:an\s+)?overdose\b", scoped):
+            return "explicit_safety_language"
         if re.search(r"\bi(?:'m| am)\s+(?:suicidal|on (?:the|a) (?:roof|ledge)).{0,65}\b(?:jump|die|suicidal)\b", scoped):
             return "immediate_safety_language"
         if re.search(r"\bi(?:'m| am)\s+suicidal\b", scoped):
