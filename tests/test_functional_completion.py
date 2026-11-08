@@ -34,7 +34,7 @@ with engine.connect() as connection:
             for module in (rec,kb,alerts,live_contacts,safety_alerts,chat_history):
                 stack.enter_context(patch.object(module,'engine',connection));stack.enter_context(patch.object(module,'Session',session))
             transport=stack.enter_context(patch.object(alerts,'send_real_invitation',return_value='synthetic-reference'))
-            stack.enter_context(patch.dict(alerts.os.environ,{'LIVE_CONTACT_ALERTS_ENABLED':'true','LIVE_CONTACT_EMAIL_ENABLED':'true','PUBLIC_APP_URL':'https://wellness-demo.university.ac.ke','EMAIL_FROM_ADDRESS':'sender@university-mail.dev','EMAIL_SENDER_VERIFIED':'true','BREVO_API_KEY':'synthetic-key','AI_PROVIDER':'ollama'}))
+            stack.enter_context(patch.dict(alerts.os.environ,{'CONTACT_DELIVERY_MODE':'production','LIVE_CONTACT_ALERTS_ENABLED':'true','LIVE_CONTACT_EMAIL_ENABLED':'true','PUBLIC_APP_URL':'https://wellness-demo.university.ac.ke','EMAIL_FROM_ADDRESS':'sender@university-mail.dev','EMAIL_SENDER_VERIFIED':'true','BREVO_API_KEY':'synthetic-key','AI_PROVIDER':'ollama'}))
             app.dependency_overrides[get_current_user]=lambda:profile
             client=stack.enter_context(TestClient(app))
             with session(connection) as db:

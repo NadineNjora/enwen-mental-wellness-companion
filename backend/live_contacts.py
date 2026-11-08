@@ -37,6 +37,16 @@ RECIPIENT_NOTICE = ("An ENWEN student nominated you as a trusted contact. Accept
 def reject(code, message):
     raise HTTPException(code, message, headers={"Cache-Control":"no-store"})
 
+def local_demo():
+    return os.getenv('CONTACT_DELIVERY_MODE','production').strip().lower()=='local_demo'
+
+def demo_recipient():
+    from email_validator import validate_email
+    value=validate_email(os.getenv('LOCAL_DEMO_RECIPIENT','').strip(),check_deliverability=False).normalized.lower()
+    if value!=os.getenv('EMAIL_FROM_ADDRESS','').strip().lower():
+        raise ValueError('Local demonstration recipient must be the verified sender mailbox.')
+    return value
+
 def public_origin():
     value = os.getenv("PUBLIC_APP_URL", "").strip().rstrip("/")
     parsed = urlsplit(value)
@@ -52,7 +62,11 @@ def public_origin():
     raise ValueError("Use a deployed application hostname, not a local address.")
 
 def configuration():
-    origin = public_origin()
+    if local_demo():
+        demo_recipient()
+        if not os.getenv('LOCAL_DEMO_USER_EMAIL','').strip():raise ValueError('Choose the demonstration student account.')
+        origin='http://127.0.0.1:8000'
+    else:origin = public_origin()
     if os.getenv("LIVE_CONTACT_EMAIL_ENABLED", "false").lower() != "true":
         raise ValueError("Real contact invitations are not enabled on this installation.")
     if os.getenv("EMAIL_SENDER_VERIFIED", "false").lower() != "true" or not os.getenv("BREVO_API_KEY", "").strip():
@@ -97,7 +111,7 @@ def summary(row, now):
 def notice(response: Response):
     response.headers["Cache-Control"] = "no-store"
     try:
-        configuration(); ready=True; reason="Ready for a deliberate invitation."
+        configuration(); ready=True; reason=("Local presentation demo: real email goes only to your verified mailbox. Open invitation links on this computer; this is not public deployment." if local_demo() else "Ready for a deliberate invitation.")
     except (ValueError, TypeError):
         ready=False; reason="Real invitations require an enabled Brevo sender and a deployed public HTTPS response page."
     return {"notice_version":VERSION,"text":NOTICE,"recipient_notice_version":RECIPIENT_VERSION,
@@ -131,6 +145,8 @@ def invite(data: Enroll,response: Response,user: AccountResponse=Depends(get_cur
     if not user.wellness_consent_current: reject(403,"Current wellness consent is required.")
     if data.notice_version!=VERSION or not data.acknowledged: reject(409,"Read and accept the current real-email notice.")
     recipient=str(data.email).lower()
+    if local_demo() and (recipient!=demo_recipient() or user.email.lower()!=os.getenv('LOCAL_DEMO_USER_EMAIL','').strip().lower()):
+        reject(403,'Local presentation invitations are restricted to the configured demo account and verified mailbox.')
     if recipient==user.email.lower(): reject(400,"Choose a trusted person with a different mailbox from your account.")
     if recipient.rsplit("@",1)[1] in ("example.com","example.net","example.org"): reject(400,"Use the local invitation flow for fictional addresses.")
     try:
@@ -159,6 +175,7 @@ def invite(data: Enroll,response: Response,user: AccountResponse=Depends(get_cur
                 "\n\nRead and choose Accept or Decline (expires in 24 hours):\n"+origin+"/static/live-contact-response.html#token="+token+
                 "\n\nKeep this separate withdrawal link to withdraw later:\n"+origin+"/static/live-contact-response.html#withdraw="+withdrawal+
                 "\n\nOpening either page alone does not change your decision. No private student records are shared.")
+            if local_demo():body="PRESENTATION DEMONSTRATION ONLY. No real distress or emergency is reported. Open the links on the computer running ENWEN.\n\n"+body
         # Claim commits before transport. Replays never resend an uncertain email.
         reference=None
         try: reference=send_real_invitation(recipient,sender,body)

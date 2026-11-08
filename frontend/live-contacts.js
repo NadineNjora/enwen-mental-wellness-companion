@@ -60,7 +60,7 @@
   by('alert-ack').addEventListener('change',controls);
   async function permission(accepted){
     if(busy||!alertNotice||(accepted&&!by('alert-ack').checked))return;const session=generation;busy=true;controls();
-    try{const result=await request('/alert-permission',{method:'POST',body:{accepted,notice_version:alertNotice.notice_version}});if(session===generation){alertNotice.accepted=result.accepted;by('alert-ack').checked=false;by('alert-status').textContent=accepted?'Permission recorded. Actual delivery still requires deployment, an accepted recipient and enabled live delivery.':'Permission withdrawn. No new check-in emails are authorised.';}}
+    try{const result=await request('/alert-permission',{method:'POST',body:{accepted,notice_version:alertNotice.notice_version}});if(session===generation){alertNotice.accepted=result.accepted;by('alert-ack').checked=false;by('alert-status').textContent=accepted?'Permission recorded. Delivery requires a current accepted recipient and the email connection shown above.':'Permission withdrawn. No new check-in emails are authorised.';}}
     catch(e){if(session===generation)by('alert-status').textContent=e.message;}
     finally{if(session===generation){busy=false;controls();}}
   }

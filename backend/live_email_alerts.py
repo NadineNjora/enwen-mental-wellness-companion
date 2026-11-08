@@ -11,7 +11,7 @@ from database import engine
 from authentication import AccountResponse,get_current_user
 from registration import CONSENT_VERSION
 from live_contact_models import LiveContactInvitation as Invitation
-from live_contacts import RECIPIENT_VERSION,configuration,send_real_invitation,reject
+from live_contacts import RECIPIENT_VERSION,configuration,send_real_invitation,reject,local_demo,demo_recipient
 from email_service import EmailServiceError
 
 VERSION='live-email-alert-1'
@@ -76,7 +76,7 @@ def permission(data:Permission,response:Response,user:AccountResponse=Depends(ge
         if db.scalar(select(User.user_id).where(User.user_id==user.user_id).with_for_update()) is None:reject(401,'Please log in again.')
         recipient=db.scalar(select(Invitation).where(Invitation.user_id==user.user_id,Invitation.decision=='accepted',Invitation.revoked_at.is_(None),Invitation.recipient_notice_version==RECIPIENT_VERSION).limit(1))
         if data.accepted and (not user.wellness_consent_current or not recipient):reject(409,'An accepted real contact agreement and current wellness consent are required first.')
-        db.add(LiveEmailPermission(user_id=user.user_id,invitation_id=recipient.invitation_id if data.accepted else None,notice_version=VERSION,notice_text=NOTICE+('\nEnrollment: '+str(recipient.invitation_id) if data.accepted else ''),decision='accepted' if data.accepted else 'withdrawn'))
+        db.add(LiveEmailPermission(user_id=user.user_id,invitation_id=recipient.invitation_id if data.accepted else None,notice_version=VERSION,notice_text=NOTICE+('\nEnrollment: '+str(recipient.invitation_id) if data.accepted else ''),decision='accepted' if data.accepted else 'withdrawn',recorded_at=db.scalar(select(func.clock_timestamp()))))
     return {'accepted':data.accepted,'automatic_sms_enabled':False}
 def create_live_alert(user_id,request_id,demonstration=False):
     user_id,request_id=UUID(str(user_id)),UUID(str(request_id));recipient=None;sender=None;body=None
@@ -87,11 +87,17 @@ def create_live_alert(user_id,request_id,demonstration=False):
         now=db.scalar(select(func.clock_timestamp()))
         enrollment=db.scalar(select(Invitation).where(Invitation.user_id==user_id,Invitation.decision=='accepted',Invitation.revoked_at.is_(None),Invitation.recipient_notice_version==RECIPIENT_VERSION).order_by(Invitation.created_at.desc()).limit(1))
         status='disabled'
-        if demonstration:status='blocked_demo'
+        demo_allowed=False
+        if local_demo():
+            account=db.get(User,user_id)
+            try:demo_allowed=bool(enrollment and enrollment.email.lower()==demo_recipient() and account and account.email.lower()==os.getenv('LOCAL_DEMO_USER_EMAIL','').strip().lower() and os.getenv('LOCAL_DEMO_NOTIFICATIONS','false').lower()=='true')
+            except ValueError:pass
+        if local_demo() and not demo_allowed:status='blocked_demo'
+        elif demonstration and not demo_allowed:status='blocked_demo'
         elif os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true':
             if not agreed(db,user_id,'wellness_use',CONSENT_VERSION) or not agreed(db,user_id,'live_email_alert',VERSION,enrollment):status='blocked_consent'
             elif not enrollment:status='blocked_unconfirmed'
-            elif db.scalar(select(LiveEmailAlert.event_id).where(LiveEmailAlert.user_id==user_id,LiveEmailAlert.created_at>now-timedelta(minutes=10),LiveEmailAlert.status.in_(('dispatching','provider_accepted','uncertain'))).limit(1)):status='blocked_cooldown'
+            elif db.scalar(select(LiveEmailAlert.event_id).where(LiveEmailAlert.user_id==user_id,LiveEmailAlert.status.in_(('dispatching','provider_accepted','uncertain')),*(() if local_demo() else (LiveEmailAlert.created_at>now-timedelta(minutes=10),))).limit(1)):status='blocked_cooldown'
             else:
                 try:_,sender=configuration()
                 except (ValueError,TypeError):status='disabled'
@@ -101,11 +107,15 @@ def create_live_alert(user_id,request_id,demonstration=False):
                           "You agreed to receive these messages as their trusted contact. Please check in directly if you can. "
                           "This signal can be wrong and is not a clinical assessment or emergency dispatch. No private conversation, journal or mood text is included. "
                           "To withdraw, use the separate withdrawal link in your original ENWEN invitation email.")
+                    if local_demo():body=("PRESENTATION DEMONSTRATION ONLY — NO REAL EMERGENCY. "
+                        "This is the authorised ENWEN automatic check-in email test for Demo Student. "
+                        "No real distress is reported and no emergency response is requested. The chat interruption and contact-notification path have been exercised. "
+                        "No private journal, mood or chat content is included. Use the withdrawal link in your invitation if you want to withdraw.")
         row=LiveEmailAlert(user_id=user_id,request_id=request_id,invitation_id=enrollment.invitation_id if enrollment else None,status=status,created_at=now)
         db.add(row);db.flush();identifier=row.event_id
         if recipient is None:return result(row)
     reference=None
-    try:reference=send_real_invitation(recipient,sender,body,subject='ENWEN: a request to check in')
+    try:reference=send_real_invitation(recipient,sender,body,subject='ENWEN DEMO: automatic check-in test' if local_demo() else 'ENWEN: a request to check in')
     except EmailServiceError:pass
     with Session(engine) as db,db.begin():
         row=db.scalar(select(LiveEmailAlert).where(LiveEmailAlert.event_id==identifier).with_for_update())

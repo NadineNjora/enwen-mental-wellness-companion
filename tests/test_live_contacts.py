@@ -36,7 +36,7 @@ with engine.connect() as connection:
         with ExitStack() as stack:
             stack.enter_context(patch.object(module,'engine',connection));stack.enter_context(patch.object(module,'Session',session))
             transport=stack.enter_context(patch.object(module,'send_real_invitation',side_effect=captured))
-            stack.enter_context(patch.dict(module.os.environ,{'PUBLIC_APP_URL':'https://wellness-demo.university.ac.ke','LIVE_CONTACT_EMAIL_ENABLED':'true','EMAIL_FROM_ADDRESS':'sender@university-mail.dev','EMAIL_SENDER_VERIFIED':'true','BREVO_API_KEY':'synthetic-only'}))
+            stack.enter_context(patch.dict(module.os.environ,{'CONTACT_DELIVERY_MODE':'production','PUBLIC_APP_URL':'https://wellness-demo.university.ac.ke','LIVE_CONTACT_EMAIL_ENABLED':'true','EMAIL_FROM_ADDRESS':'sender@university-mail.dev','EMAIL_SENDER_VERIFIED':'true','BREVO_API_KEY':'synthetic-only'}))
             app.dependency_overrides[get_current_user]=lambda:profile
             with session(connection) as db:
                 db.add_all([User(user_id=x,email=str(x)+'@example.com',display_name='Fictional',password_hash='unused') for x in (uid,other)]);db.flush()

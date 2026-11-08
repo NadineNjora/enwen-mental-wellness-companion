@@ -25,14 +25,15 @@ from runtime_settings import ollama_origin
 from knowledge import retrieve as retrieve_knowledge
 
 router = APIRouter(prefix="/chat", tags=["AI conversations"])
-NOTICE_VERSION = "saved-chat-safety-4"
+NOTICE_VERSION = "saved-chat-safety-5"
 NOTICE = ("Your messages in this conversation and selected public resource summaries will be sent to {processor} "
           "to generate an AI response. Your saved journals and mood records are not sent. "
           "Use fictional messages during development. AI replies may be inaccurate; ENWEN is not a clinician "
           "or emergency service. Your conversation and this acknowledgement are saved privately in ENWEN's database "
           "so you can return to your history. A prototype safety screen may pause AI replies and show human support. "
-          "A confirmed fictional trusted contact may receive a clearly synthetic email in local Mailpit only. "
-          "Live emergency texts are not enabled; saved local-test consent does not authorise contacting a real person.")
+          "Contact emails require separate student permission and an accepted recipient invitation. "
+          "In local presentation mode, one clearly labelled demonstration email may go only to the configured verified mailbox. "
+          "SMS remains on hold; saved local-test consent does not authorise contacting a real person.")
 SYSTEM = ("You are ENWEN, a warm, concise, non-diagnostic wellbeing companion for Kenyan university students. "
           "Help reflection and access to human support. Ask at most one gentle question at a time. "
           "Do not diagnose, prescribe medication, claim treatment success, promise confidentiality, "
@@ -81,8 +82,9 @@ LOCAL_NOTICE = ("Llama 3.2 runs through Ollama on the computer hosting ENWEN. EN
                 "AI replies can be inaccurate and do not replace professional care. Your conversation and this acknowledgement "
                 "are saved privately in ENWEN's database, so you can reopen chat history. "
                 "A prototype safety screen may pause ordinary AI replies and show human support. "
-                "For a confirmed fictional trusted contact, a clearly synthetic email may be captured in local Mailpit. "
-                "No real person is contacted, and live emergency texts are not enabled.")
+                "Contact emails require separate student permission and an accepted recipient invitation. "
+                "In local presentation mode, one clearly labelled demonstration email may go only to the configured verified mailbox. "
+                "SMS remains on hold. Existing fictional contact records do not authorise real emails.")
 
 
 def provider():
