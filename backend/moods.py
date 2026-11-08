@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from authentication import AccountResponse, get_current_user
 from database import engine
 from models import MoodEntry
+from mood_context_models import MoodContext, CONTEXTS
 
 router = APIRouter(prefix="/moods", tags=["Mood check-ins"])
 
@@ -22,6 +23,14 @@ class MoodCreate(BaseModel):
     # Required so an old, already-open 1-5 form cannot silently save on scale 10.
     scale_max: Literal[10]
     note: str | None = Field(default=None, max_length=1000)
+    contexts: list[str] = Field(default_factory=list, max_length=6)
+
+    @field_validator('contexts')
+    @classmethod
+    def valid_contexts(cls,values):
+        if len(set(values))!=len(values) or any(value not in CONTEXTS for value in values):
+            raise ValueError('Choose up to six different listed student factors.')
+        return values
 
 
 class MoodResponse(BaseModel):
@@ -32,6 +41,7 @@ class MoodResponse(BaseModel):
     scale_max: int
     note: str | None
     created_at: datetime
+    contexts: list[str] = Field(default_factory=list)
 
 
 def require_mood_consent(
@@ -59,7 +69,8 @@ def create_mood(
                 )
                 session.add(entry)
                 session.flush()
-                result = MoodResponse.model_validate(entry)
+                session.add_all([MoodContext(mood_id=entry.mood_id,context_key=key) for key in data.contexts])
+                result = MoodResponse.model_validate(entry).model_copy(update={'contexts':data.contexts})
 
     except SQLAlchemyError:
         raise HTTPException(503, "Mood check-in could not be saved.") from None
@@ -84,7 +95,11 @@ def list_my_moods(
                 .limit(limit)
                 .offset(offset)
             ).all()
-            result = [MoodResponse.model_validate(entry) for entry in entries]
+            contexts={entry.mood_id:[] for entry in entries}
+            if contexts:
+                for identifier,key in session.execute(select(MoodContext.mood_id,MoodContext.context_key).where(MoodContext.mood_id.in_(contexts)).order_by(MoodContext.context_key)):
+                    contexts[identifier].append(key)
+            result = [MoodResponse.model_validate(entry).model_copy(update={'contexts':contexts[entry.mood_id]}) for entry in entries]
 
     except SQLAlchemyError:
         raise HTTPException(503, "Mood history is temporarily unavailable.") from None

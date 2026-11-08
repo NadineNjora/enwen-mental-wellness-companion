@@ -14,6 +14,7 @@ from sqlalchemy.schema import CreateTable
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 import authentication
 import moods
+from mood_context_models import MoodContext
 from database import engine
 from main import validation_error_handler
 from migrate_mood_scale import fingerprint
@@ -42,7 +43,7 @@ with engine.connect() as connection:
     transaction = connection.begin()
     try:
         connection.execute(text("SET LOCAL search_path = pg_temp, pg_catalog"))
-        for table in (User.__table__, MoodEntry.__table__):
+        for table in (User.__table__, MoodEntry.__table__, MoodContext.__table__):
             ddl = str(CreateTable(table).compile(dialect=connection.dialect))
             connection.exec_driver_sql(ddl.replace("CREATE TABLE ", "CREATE TEMPORARY TABLE ", 1))
             assert connection.scalar(text("SELECT relpersistence='t' FROM pg_class WHERE oid=to_regclass(:name)"), {"name": table.name})

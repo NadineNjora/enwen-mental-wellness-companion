@@ -30,7 +30,8 @@
     ["🌟 A small win", "One small thing I want to acknowledge today is..."],
     ["🎉 A special occasion", "Today feels different because..."],
   ];
-  for (const [name, prompt] of prompts) {
+  const contextKeys=['coursework','finances','weather','commute','relationships','sleep','rest','celebration'];
+  for (const [index, [name, prompt]] of prompts.entries()) {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = name;
@@ -47,6 +48,7 @@
         return;
       }
       note.value = next;
+      window.enwenMoodInsights?.choose(contextKeys[index]);
       note.dispatchEvent(new Event("input", { bubbles: true }));
       message.textContent = "Starting point added. Add your own words, then save your check-in.";
       note.focus();

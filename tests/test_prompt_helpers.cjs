@@ -20,7 +20,7 @@ for (const config of [
   const fields = element(), form = element(), input = element(), label = element();
   const selectors = { [`#${config.prefix}-fields`]: fields, [`#${config.prefix}-form`]: form,
     [`#${config.field}`]: input, [config.label]: label };
-  const context = vm.createContext({ Event: class {}, document: {
+  const context = vm.createContext({ Event: class {}, window: {}, document: {
     querySelector: selector => selectors[selector] || nodes.find(node => "#" + node.id === selector) || null,
     createElement: () => element(),
   } });

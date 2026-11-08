@@ -208,8 +208,20 @@ function walk(node) { return [node, ...node.children.flatMap(walk)]; }
     ? reply(201, { mood_score: 10, scale_max: 10, created_at: "2026-11-04T12:00:00+03:00" }) : p.baseline(url, options));
   await p.elements["mood-form"].fire("submit"); await tick();
   const moodPost = p.calls.find(c => c.url === "/moods" && c.options.method === "POST");
-  assert.deepEqual(JSON.parse(moodPost.options.body), { mood_score: 10, scale_max: 10, note: "Fictional form check" });
+  assert.deepEqual(JSON.parse(moodPost.options.body), { mood_score: 10, scale_max: 10, note: "Fictional form check", contexts: [] });
   checks.push("actual form handler submits an explicitly labelled 10-point score");
+
+  p = page({app:true}); await p.login();
+  p.context.window.enwenMoodInsights={selection:()=>['exams','finances']};
+  p.elements['mood-form'].querySelector=()=>({value:'7'});
+  p.elements['mood-note'].value='Keep my unsaved day';let moodResets=0;
+  p.elements['mood-form'].reset=()=>{moodResets++;};
+  p.respond((url,options)=>url==='/moods'&&options.method==='POST'?reply(503,{detail:'Synthetic save failure'}):p.baseline(url,options));
+  await p.elements['mood-form'].fire('submit');
+  const failedMood=p.calls.find(c=>c.url==='/moods'&&c.options.method==='POST');
+  assert.deepEqual(JSON.parse(failedMood.options.body).contexts,['exams','finances']);
+  assert.equal(p.elements['mood-note'].value,'Keep my unsaved day');assert.equal(moodResets,0);
+  checks.push('structured factors submitted and unsaved draft preserved when mood save fails');
 
   p = page({app:true}); await p.login();
   const fullHistory = Array.from({length:101}, (_, i) => ({mood_id: "mood-"+i, mood_score: 5, scale_max: i < 40 ? 10 : 5, created_at: new Date(Date.UTC(2026,10,5,12,0)-i*86400000).toISOString()}));

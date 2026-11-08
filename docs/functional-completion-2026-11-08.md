@@ -2,6 +2,8 @@
 
 The scope was checked against 4thyr proposal.final.docx, especially the aim, specific objectives, scope, system components and evaluation sections. Deployment/backup drafts are supporting work and are not counted as student features. SMS is on hold at the developer's explicit request. No grade or percentage is claimed without the supervisor's rubric.
 
+Subsequent same-day updates: the [restricted local real-email demonstration](local-email-presentation-2026-11-08.md) completed with user-confirmed receipt, and [student context and private calendar summaries](student-context-2026-11-08.md) were implemented and verified. These supersede the earlier local delivery status below. Public deployment and broader real-contact operation remain outstanding.
+
 | Promised function | Current implementation | Remaining verification/work |
 |---|---|---|
 | Accounts, authentication, informed consent | Registration, JWT, revocable saved sessions, owner-only access and separate consent notices | Real user acceptance testing and hosted HTTPS session checks |

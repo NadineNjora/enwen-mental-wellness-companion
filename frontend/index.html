@@ -19,7 +19,9 @@
   <link rel="stylesheet" href="/static/feature_updates.css?v=20261105-refine">
 
 <script src="/static/mood_chart.js?v=20261105-refine" defer></script>
-<script src="/static/app.js?v=20261106-session" defer></script>
+<script src="/static/app.js?v=20261108-context" defer></script>
+<script src="/static/mood-insights.js?v=20261108-context" defer></script>
+<link rel="stylesheet" href="/static/mood-insights.css?v=20261108-context">
 <script src="/static/journals.js?v=20261105-refine" defer></script>
   <script src="/static/trusted-contact.js?v=20261105-refine" defer></script>
   <script src="/static/live-contacts.js?v=20261108" defer></script>
@@ -31,12 +33,12 @@
   <link rel="stylesheet" href="/static/safety_support.css?v=20261106-safety">
   <script src="/static/chat.js?v=20261107-manage" defer></script>
   <link rel="stylesheet" href="/static/chat.css?v=20261107-manage">
-<script src="/static/navigation.js?v=20261106-session" defer></script>
+<script src="/static/navigation.js?v=20261108-context" defer></script>
   <script src="/static/session.js?v=20261106-session" defer></script>
   <link rel="stylesheet" href="/static/wellness-tools.css?v=20261105-refine">
   <link rel="stylesheet" href="/static/trusted-contact.css?v=20261105-refine">
   <link rel="stylesheet" href="/static/prompts.css?v=20261105-refine">
-<script src="/static/student_prompts.js?v=20261105-refine" defer></script>
+<script src="/static/student_prompts.js?v=20261108-context" defer></script>
 <script src="/static/reflection_prompts.js?v=20261105-refine" defer></script>
   <link rel="stylesheet" href="/static/personality.css?v=20261105-refine">
   <link rel="stylesheet" href="/static/refinements.css?v=20261105-refine">
@@ -316,6 +318,12 @@
                 </label>
               </div>
 
+              <details class="mood-context-picker">
+                <summary>Keep a few factors with this check-in 🌼</summary>
+                <p id="mood-context-help">Pick up to six. These tags help you reflect on your student life; your note stays your own.</p>
+                <div id="mood-context-choices" class="mood-context-choices" role="group" aria-label="Factors in my day" aria-describedby="mood-context-help"></div>
+                <p id="mood-context-status" class="small-note" role="status" aria-live="polite"></p>
+              </details>
               <label for="mood-note">Wanna say a little more...?</label>
               <textarea
                 id="mood-note"
@@ -361,6 +369,18 @@
             Your full history, at a glance. Browse your dated check-ins below the charts.
           </p>
 
+          <section id="mood-insights" class="mood-insights" aria-labelledby="mood-insights-title">
+            <div class="mood-insights-heading"><div><p class="mood-insights-eyebrow">A little perspective 🌷</p><h4 id="mood-insights-title">Your days, in context.</h4></div>
+              <label for="mood-insights-period">Look back<select id="mood-insights-period"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select></label>
+            </div>
+            <p id="mood-insights-status" role="status" aria-live="polite">Your private summary will appear here.</p>
+            <div id="mood-insights-content" hidden>
+              <div id="mood-insights-metrics" class="mood-insights-metrics"></div>
+              <div class="mood-insights-columns"><section><h5>What’s been part of your days?</h5><ul id="mood-insights-factors" class="mood-insights-factors"></ul><p id="mood-insights-unlabelled" class="small-note"></p></section>
+                <section><h5>When you make room for yourself</h5><ul id="mood-insights-times" class="mood-insights-times"></ul><p class="small-note">Check-in times in Nairobi (EAT), not an estimate of how you felt throughout the day.</p></section></div>
+              <p id="mood-insights-explanation" class="small-note"></p>
+            </div>
+          </section>
           <p
             id="mood-history-message"
             class="status"

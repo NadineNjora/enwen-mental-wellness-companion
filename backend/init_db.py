@@ -2,6 +2,7 @@ from sqlalchemy import inspect
 
 from database import engine
 from models import Base
+from mood_context_models import MoodContext
 from journal_models import JournalEntry
 from trusted_contact_models import TrustedContact
 from contact_invitation_models import TrustedContactInvitation
@@ -33,6 +34,7 @@ def create_tables():
         "live_email_permissions",
         "consents",
         "mood_entries",
+        "mood_contexts",
         "journal_entries",
         "trusted_contacts",
         "trusted_contact_invitations",

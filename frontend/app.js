@@ -254,6 +254,7 @@ let moodConsent = false;
 let moodSaving = false;
 
 function resetMoodPanel() {
+  window.enwenMoodInsights?.reset();
   moodGeneration += 1;
   clearMoodHistory();
 
@@ -271,6 +272,7 @@ function setupMoodPanel(user) {
 
   moodConsent = user.wellness_consent_current === true;
   moodFields.disabled = !moodConsent;
+  void window.enwenMoodInsights?.setup(user);
 
   if (!moodConsent) {
     moodMessage.textContent =
@@ -299,6 +301,7 @@ moodForm.addEventListener("submit", async (event) => {
     mood_score: Number(choice.value),
     scale_max: 10,
     note: moodNote.value.trim() || null,
+    contexts: window.enwenMoodInsights?.selection() || [],
   };
 
   const generation = moodGeneration;
@@ -354,6 +357,8 @@ moodForm.addEventListener("submit", async (event) => {
 
     // Refreshing history is separate from saving the check-in.
     void loadMoodHistory();
+    void window.enwenMoodInsights?.load();
+    void window.enwenSuggestions?.load();
   } catch (error) {
     if (generation !== moodGeneration) return;
 
@@ -404,6 +409,11 @@ function renderMoodHistoryList() {
       {dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Nairobi"});
     note.textContent = entry.note || "No note added.";
     item.append(heading, timestamp, note); fragment.append(item);
+    if (entry.contexts?.length) {
+      const factors=document.createElement('p');factors.className='mood-entry-contexts';
+      factors.textContent='Part of that day: '+entry.contexts.map(key=>window.enwenMoodInsights?.label(key)||key).join(' · ');
+      item.append(factors);
+    }
   }
   historyList.replaceChildren(fragment);
   historyPrev.disabled = historyOffset === 0;
@@ -462,6 +472,6 @@ async function loadMoodHistory() {
     if (isCurrent()) { historyController = null; historyList.setAttribute("aria-busy", "false"); historyRefresh.disabled = !moodConsent; }
   }
 }
-historyRefresh.addEventListener("click", () => { if (!historyRefresh.disabled) void loadMoodHistory(); });
+historyRefresh.addEventListener("click", () => { if (!historyRefresh.disabled) { void loadMoodHistory(); void window.enwenMoodInsights?.load(); } });
 historyPrev.addEventListener("click", () => { if (!historyPrev.disabled) { historyOffset -= 20; renderMoodHistoryList(); } });
 historyNext.addEventListener("click", () => { if (!historyNext.disabled) { historyOffset += 20; renderMoodHistoryList(); } });
