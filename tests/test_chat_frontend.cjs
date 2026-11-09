@@ -208,6 +208,10 @@ const texts=node=>[node.textContent,...node.children.map(texts)].join(" ");
   assert.equal(p.safetyCalls.length,1);assert.equal(p.nodes['chat-fields'].disabled,true);assert.ok(finishUrgent);
   finishUrgent();await urgentPending;assert.equal(p.safetyCalls.length,2);
   checks.push('human support appears before the chat and notification request completes');
+  p=page();await p.setup();
+  p.respond((url,options)=>url==='/chat/screen'?response(200,{urgent:true,support}):url==='/chat'?response(503,{detail:'Synthetic recording failure'}):p.baseline(url,options));
+  await p.send('Fictional urgent test');assert.equal(p.nodes['chat-fields'].disabled,true);assert.equal(p.safetyCalls.at(-1).alert.status,'uncertain');
+  checks.push('failed contact request replaces pending status with uncertainty while support stays open');
 
   console.log(JSON.stringify({passed:checks.length,checks,scope:"Synthetic DOM/API only; no private records, AI requests or notifications."},null,2));
 })().catch(error=>{console.error(error);process.exitCode=1;});

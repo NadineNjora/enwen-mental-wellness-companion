@@ -300,6 +300,7 @@
     let id;
     try { id = requestId(text); } catch(error) { status(error.message, true); return; }
     const acknowledged = agree.checked === true, job = begin("send", requestTimeout);
+    let urgentSupport = null;
     sending = true; controls(); status("Nia is finding a little room for your thoughts…");
     try {
       // Show support before waiting for persistence or email transport.
@@ -308,6 +309,7 @@
         const screening = await request("/chat/screen", job, {method:"POST", body:{message:text}});
         if (!job.current()) return;
         if (screening?.urgent && screening.support?.level === "urgent") {
+          urgentSupport = screening.support;
           conversationPaused = true;
           window.enwenSafety?.show(screening.support);
           status("Let’s bring in human support. Checking your contact request…");
@@ -339,6 +341,7 @@
       void loadHistory(0);
     } catch (error) {
       if (job.current()) {
+        if (urgentSupport) window.enwenSafety?.show({...urgentSupport,alert:{status:'uncertain',message:'The contact request could not be confirmed. Please reach a person directly.'}});
         if (error.status === 403 && acknowledged) blockForConsent();
         else {
           if (error.status === 409) agree.checked = false;
