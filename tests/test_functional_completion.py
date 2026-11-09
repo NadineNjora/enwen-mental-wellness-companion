@@ -5,12 +5,14 @@ from uuid import uuid4
 from contextlib import ExitStack
 from unittest.mock import patch
 from datetime import timedelta
+from datetime import date
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'backend'))
 from main import app
 import recommendations as rec,knowledge as kb,live_email_alerts as alerts,live_contacts,safety_alerts,chat_history,ai_chat
 from authentication import AccountResponse,get_current_user
 from database import engine
 from models import Base,User,Consent,MoodEntry
+from resource_models import WellnessResource
 from live_contact_models import LiveContactInvitation as Enrollment
 from registration import CONSENT_VERSION
 from fastapi.testclient import TestClient
@@ -40,7 +42,9 @@ with engine.connect() as connection:
             with session(connection) as db:
                 db.add_all([User(user_id=x,email=str(x)+'@example.com',display_name='Synthetic',password_hash='unused') for x in (uid,other)]);db.flush()
                 db.add(Consent(user_id=uid,consent_type='wellness_use',notice_version=CONSENT_VERSION,notice_text='Synthetic',decision='accepted'))
-                for row in kb.json.loads(Path(kb.__file__).with_name('resources_catalog.json').read_text(encoding='utf-8-sig')):db.add(kb.KnowledgePassage(**{k:row[k] for k in kb.FIELDS}))
+                for row in kb.json.loads(Path(kb.__file__).with_name('resources_catalog.json').read_text(encoding='utf-8-sig')):
+                    db.add(kb.KnowledgePassage(**{k:row[k] for k in kb.FIELDS}))
+                    db.add(WellnessResource(**{**row,'source_checked_on':date.fromisoformat(row['source_checked_on'])}))
                 db.commit()
             empty=client.get('/wellness/suggestions');check('empty history gives no invented mood',empty.json()['latest_checkin'] is None)
             with session(connection) as db:

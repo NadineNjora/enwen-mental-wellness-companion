@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models import Base
@@ -18,6 +18,9 @@ class WellnessResource(Base):
     url: Mapped[str] = mapped_column(String(500), nullable=False)
     audience_note: Mapped[str] = mapped_column(String(300), nullable=False)
     source_checked_on: Mapped[date] = mapped_column(Date, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, server_default='true')
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default='1')
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ResourceBookmark(Base):

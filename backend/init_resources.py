@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from database import engine
 from resource_models import ResourceBookmark, WellnessResource
+from migrate_resource_admin import ensure_resource_schema
 
 
 def catalog():
@@ -30,6 +31,7 @@ def catalog():
 
 
 def create_resources():
+    ensure_resource_schema()
     rows = catalog()
     with engine.begin() as connection:
         connection.execute(text("SET LOCAL lock_timeout = '5s'"))

@@ -17,6 +17,7 @@ const enwenRouteTitles = new Map([
   ["chat", "Let's talk"],
   ["trusted-contact", "Trusted contact"],
   ["resources", "Wellness resources"],
+  ["resource-admin", "Resource desk"],
   ["pause", "A mindful minute"],
 ]);
 
@@ -89,11 +90,12 @@ function renderPage({ focus = true, reset = false } = {}) {
   if (route === "home") void window.enwenSuggestions?.load();
   if (route === "mood-history") void window.enwenMoodInsights?.load();
   if (route === "community") void window.enwenCommunity?.load();
+  if (route === "resource-admin") void window.enwenResourceAdmin?.load();
   document.title = "ENWEN | " + enwenRouteTitles.get(route);
   history.replaceState(null, "", "#/" + route);
 
   for (const link of enwenNav.querySelectorAll("a")) {
-    if (link.dataset.route === route) {
+    if (link.dataset.route === route || (route === 'resource-admin' && link.dataset.route === 'resources')) {
       link.setAttribute("aria-current", "page");
     }
   }

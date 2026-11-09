@@ -34,6 +34,7 @@ function endSession(message = "You are logged out of this page.") {
   window.enwenPause?.reset();
   window.enwenChat?.reset();
   window.enwenCommunity?.reset();
+  window.enwenResourceAdmin?.reset();
 
   accessToken = null;
   clearTimeout(expiryTimer);
@@ -161,6 +162,7 @@ loginForm.addEventListener("submit", async (event) => {
     window.enwenPause?.setup(user);
     void window.enwenChat?.setup(user);
     void window.enwenCommunity?.setup(user);
+    void window.enwenResourceAdmin?.setup(user);
 
     showStatus("Login successful. Your account is connected.");
     renderPage();
@@ -239,6 +241,7 @@ async function restoreSavedLogin() {
     window.enwenResources?.setup(user); window.enwenPause?.setup(user);
     void window.enwenChat?.setup(user);
     void window.enwenCommunity?.setup(user);
+    void window.enwenResourceAdmin?.setup(user);
     showStatus("Welcome back. Your saved login is connected.");
     renderPage({focus:false});
   } catch (error) {

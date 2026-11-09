@@ -10,6 +10,7 @@ from sqlalchemy import Boolean,String,Text,select
 from sqlalchemy.orm import Mapped,mapped_column,Session
 from models import Base
 from database import engine
+from resource_models import WellnessResource
 
 class KnowledgePassage(Base):
     __tablename__="knowledge_passages"
@@ -43,7 +44,7 @@ def rank(query,rows,limit=3):
     return [dict(row,retrieval_method="BM25 over curated database summaries") for _,row in scored[:limit]]
 def retrieve(query):
     with Session(engine) as db:
-        passages=db.scalars(select(KnowledgePassage).where(KnowledgePassage.active.is_(True)).limit(1000)).all()
+        passages=db.scalars(select(KnowledgePassage).join(WellnessResource,WellnessResource.resource_id==KnowledgePassage.resource_id).where(KnowledgePassage.active.is_(True),WellnessResource.active.is_(True)).limit(1000)).all()
         return rank(query,[{key:getattr(row,key) for key in FIELDS} for row in passages])
 def seed():
     KnowledgePassage.__table__.create(bind=engine,checkfirst=True)

@@ -19,11 +19,13 @@
   <link rel="stylesheet" href="/static/feature_updates.css?v=20261105-refine">
 
 <script src="/static/mood_chart.js?v=20261105-refine" defer></script>
-<script src="/static/app.js?v=20261108-community" defer></script>
+<script src="/static/app.js?v=20261109-resource" defer></script>
 <script src="/static/mood-insights.js?v=20261108-context" defer></script>
 <link rel="stylesheet" href="/static/mood-insights.css?v=20261108-context">
 <script src="/static/community.js?v=20261108" defer></script>
 <link rel="stylesheet" href="/static/community.css?v=20261108">
+<script src="/static/resource-admin.js?v=20261109" defer></script>
+<link rel="stylesheet" href="/static/resource-admin.css?v=20261109">
 <script src="/static/journals.js?v=20261105-refine" defer></script>
   <script src="/static/trusted-contact.js?v=20261105-refine" defer></script>
   <script src="/static/live-contacts.js?v=20261108" defer></script>
@@ -35,7 +37,7 @@
   <link rel="stylesheet" href="/static/safety_support.css?v=20261106-safety">
   <script src="/static/chat.js?v=20261107-manage" defer></script>
   <link rel="stylesheet" href="/static/chat.css?v=20261107-manage">
-<script src="/static/navigation.js?v=20261108-community" defer></script>
+<script src="/static/navigation.js?v=20261109-resource" defer></script>
   <script src="/static/session.js?v=20261106-session" defer></script>
   <link rel="stylesheet" href="/static/wellness-tools.css?v=20261105-refine">
   <link rel="stylesheet" href="/static/trusted-contact.css?v=20261105-refine">
@@ -533,6 +535,7 @@
             <p>Need a moment before you read?</p>
             <a href="#/pause">Try a mindful minute <span aria-hidden="true">🍃</span> →</a>
           </div>
+          <p><a id="resource-admin-open" href="#/resource-admin" hidden>Open the resource desk →</a></p>
           <form id="resources-filter-form" class="resources-filter-form">
             <fieldset id="resources-fields" disabled>
               <legend>Find something for today</legend>
@@ -561,6 +564,25 @@
           <p id="resources-message" class="status" role="status" aria-live="polite"></p>
           <div id="resources-list" class="resources-grid" aria-busy="false"></div>
           <p class="small-note">These are general wellbeing readings. External pages open in another tab; their service arrangements depend on the country and institution. Your saved links are private to your ENWEN account.</p>
+        </section>
+
+        <section id="page-resource-admin" class="app-page resource-admin" data-page="resource-admin" aria-labelledby="resource-admin-title" hidden>
+          <p class="eyebrow">A thoughtful library 🌿</p><h2 id="resource-admin-title">The resource desk.</h2>
+          <p class="muted">Prepare, review and publish public wellbeing readings. The library and Llama’s source summaries update together.</p><a href="#/resources">← Back to the student library</a>
+          <div class="resource-admin-tabs" aria-label="Resource desk views"><button id="resource-admin-library-tab" type="button">Library</button><button id="resource-admin-editor-tab" type="button">Prepare a draft</button><button id="resource-admin-drafts-tab" type="button">Review drafts</button><button id="resource-admin-history-tab" type="button">Change history</button></div>
+          <p id="resource-admin-message" class="status" role="status" aria-live="polite"></p>
+          <section id="resource-admin-library-view"><div class="resource-admin-heading"><h3>Published and retired readings</h3><button id="resource-admin-refresh" type="button">Refresh</button></div><div id="resource-admin-library" class="resource-admin-grid"></div></section>
+          <section id="resource-admin-editor-view" hidden><h3 id="resource-admin-editor-title">Prepare a new resource</h3><p id="resource-admin-base" class="small-note">New resources start with an unpublished draft.</p>
+            <details><summary>Permitted public publishers</summary><ul id="resource-admin-sources"></ul><p>These origins are permitted for curation. A permitted origin is not clinical certification. Open the source and check its final destination and audience.</p></details>
+            <form id="resource-admin-form"><fieldset id="resource-admin-fields" disabled><legend>The draft</legend><div class="resource-admin-fields-grid"><label for="resource-admin-key">Resource key<input id="resource-admin-key" required minlength="3" maxlength="60" pattern="[a-z0-9][a-z0-9-]{2,59}" placeholder="student-study-breaks"></label><label for="resource-admin-category">Topic<select id="resource-admin-category"><option value="stress">Stress &amp; grounding</option><option value="studies">Studies &amp; deadlines</option><option value="rest">Rest &amp; sleep</option><option value="connection">Connection</option><option value="human-support">Human support</option></select></label></div>
+              <label for="resource-admin-name">Display title<input id="resource-admin-name" required maxlength="180"></label><label for="resource-admin-url">Public source URL<input id="resource-admin-url" type="url" required maxlength="500" placeholder="https://www.nhs.uk/…"></label><p class="small-note">The publisher is determined from the permitted source address.</p>
+              <label for="resource-admin-summary">Source-faithful summary<textarea id="resource-admin-summary" rows="4" required maxlength="1200"></textarea></label><label for="resource-admin-audience">Audience and service limitations<textarea id="resource-admin-audience" rows="2" required maxlength="300" placeholder="For example, UK service instructions differ from Kenyan services."></textarea></label><label for="resource-admin-checked">Date you opened and checked this source<input id="resource-admin-checked" type="date" required></label><p class="small-note">Publishing requires a source checked today in Nairobi. This date records your source check, not the publisher’s clinical review date.</p>
+              <div class="resource-admin-actions"><button type="submit">Save review draft</button><button id="resource-admin-new" type="button">Start a new draft</button></div></fieldset></form>
+          </section>
+          <section id="resource-admin-drafts-view" hidden><h3>Review before it reaches students</h3><p id="resource-admin-review-notice" class="resource-admin-notice"></p><div id="resource-admin-drafts" class="resource-admin-grid"></div></section>
+          <section id="resource-admin-history-view" hidden><h3>The publication trail</h3><p>Before-and-after public metadata is retained for publishing and retirement. Student records are not included.</p><div id="resource-admin-history" class="resource-admin-grid"></div></section>
+          <form id="resource-admin-retire-form" class="resource-admin-retire" hidden><h3 id="resource-admin-retire-title">Retire this reading</h3><label for="resource-admin-retire-reason">Reason<textarea id="resource-admin-retire-reason" rows="2" required maxlength="300"></textarea></label><p id="resource-admin-retire-notice" class="resource-admin-notice"></p><label class="resource-admin-ack"><input id="resource-admin-retire-ack" type="checkbox" required><span>I understand and choose to retire this resource.</span></label><div class="resource-admin-actions"><button type="submit">Retire resource</button><button id="resource-admin-retire-cancel" type="button">Cancel</button></div></form>
+          <div id="resource-admin-pagination" class="resource-admin-actions"><button id="resource-admin-prev" type="button">← Previous</button><button id="resource-admin-next" type="button">Next →</button></div>
         </section>
 
         <section id="page-pause" class="app-page mindful-page" data-page="pause" aria-labelledby="pause-title" hidden>

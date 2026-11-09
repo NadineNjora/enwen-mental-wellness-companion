@@ -49,7 +49,7 @@ def list_resources(
         resource.resource_id, resource.title, resource.publisher, resource.category,
         resource.summary, resource.url, resource.audience_note, resource.source_checked_on,
         bookmark.resource_id.is_not(None).label("saved"),
-    ).outerjoin(bookmark, (bookmark.resource_id == resource.resource_id) & (bookmark.user_id == current_user.user_id))
+    ).outerjoin(bookmark, (bookmark.resource_id == resource.resource_id) & (bookmark.user_id == current_user.user_id)).where(resource.active.is_(True))
     if category:
         statement = statement.where(resource.category == category)
     if q.strip():
@@ -74,7 +74,8 @@ def list_resources(
 def save_resource(resource_id: str, current_user: AccountResponse = Depends(require_resource_consent)):
     try:
         with Session(engine) as session, session.begin():
-            if session.get(WellnessResource, resource_id) is None:
+            row=session.get(WellnessResource, resource_id)
+            if row is None or not row.active:
                 raise HTTPException(404, "Resource not found.")
             session.execute(insert(ResourceBookmark).values(user_id=current_user.user_id, resource_id=resource_id).on_conflict_do_nothing())
     except SQLAlchemyError:
