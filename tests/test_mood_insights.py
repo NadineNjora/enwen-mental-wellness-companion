@@ -53,6 +53,7 @@ with engine.connect() as connection:
             check('Nairobi calendar days counted',data['days_with_checkins']==3 and data['timezone'].startswith('Africa/Nairobi'))
             scales={x['scale_max']:x for x in data['scale_summaries']}
             check('legacy and current averages stay separate',scales[10]['average_score']==8 and scales[5]['average_score']==4 and scales[5]['count']==1)
+            check('combined average normalises each score before averaging',data['normalised_summary']=={'scale_max':10,'count':3,'average_score':8.0})
             check('only explicitly selected factors counted',{x['key']:x['count'] for x in data['contexts']}=={'exams':2,'finances':1} and data['unlabelled_checkins']==1)
             check('notes and other owner details excluded',all(value not in response.text for value in ('PRIVATE_NOTE_DO_NOT_ANALYSE','LEGACY_PRIVATE','OTHER_OWNER_NOTE',str(other))))
             check('morning and evening use Nairobi time',next(x['count'] for x in data['times'] if x['key']=='morning')>=1 and next(x['count'] for x in data['times'] if x['key']=='evening')>=1)

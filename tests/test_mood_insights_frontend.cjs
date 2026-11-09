@@ -13,7 +13,7 @@ const context=vm.createContext({document:{getElementById:id=>nodes[id],createEle
  fetch:(...args)=>responder(...args),endSession(){context.window.enwenMoodInsights.reset();context.accessToken=null;},pauseWellnessFeatures(){context.window.enwenMoodInsights.reset();}});
 vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../frontend/mood-insights.js'),'utf8'),context);
 const ui=context.window.enwenMoodInsights,checks=[];const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
-const data=(count=2)=>({total_checkins:count,days_with_checkins:2,scale_summaries:[{scale_max:10,count:1,average_score:7},{scale_max:5,count:1,average_score:4}],contexts:[{key:'exams',emoji:'📚',label:'Exams',count:1}],unlabelled_checkins:1,times:[{label:'Morning',count:1}],weekdays:[{label:'Mon',count:1}],explanation:'Separate original scales, no causation.',start_date:'2026-11-01',end_date:'2026-11-07'});
+const data=(count=2)=>({total_checkins:count,days_with_checkins:2,normalised_summary:{scale_max:10,count,average_score:7.5},scale_summaries:[{scale_max:10,count:1,average_score:7},{scale_max:5,count:1,average_score:4}],contexts:[{key:'exams',emoji:'📚',label:'Exams',count:1}],unlabelled_checkins:1,times:[{label:'Morning',count:1}],weekdays:[{label:'Mon',count:1}],explanation:'Separate original scales, no causation.',start_date:'2026-11-01',end_date:'2026-11-07'});
 (async()=>{
  await ui.setup({wellness_consent_current:true});check('catalog rendered as accessible checkbox labels',nodes['mood-context-choices'].children.length===7&&nodes['mood-context-choices'].children[0].children[0].type==='checkbox');
  for(const o of options.slice(0,6))ui.choose(o.key);
@@ -21,8 +21,8 @@ const data=(count=2)=>({total_checkins:count,days_with_checkins:2,scale_summarie
  const first=nodes['mood-context-choices'].children[0].children[0];first.checked=false;first.fire('change');
  check('unselecting permits another factor',ui.choose('rest')&&ui.selection().includes('rest'));
  responder=async()=>response(data());await ui.load();
- check('separate legacy and current averages rendered',nodes['mood-insights-metrics'].children.some(n=>n.children[0].textContent==='7/10')&&nodes['mood-insights-metrics'].children.some(n=>n.children[0].textContent==='4/5'));
- check('tagged and unlabelled counts explained',nodes['mood-insights-factors'].children[0].textContent.includes('Exams')&&nodes['mood-insights-unlabelled'].textContent.includes('1 check-in'));
+ check('one combined ten-point average rendered',nodes['mood-insights-metrics'].children.length===3&&nodes['mood-insights-metrics'].children[2].children[0].textContent==='7.5/10');
+ check('selected factors remain while verbose notices are removed',nodes['mood-insights-factors'].children[0].textContent.includes('Exams')&&nodes['mood-insights-unlabelled'].textContent===''&&nodes['mood-insights-explanation'].textContent==='');
  check('time bars have accessible labels and bounded totals',nodes['mood-insights-times'].children[0].children[0].max===2);
  responder=async()=>{throw new TypeError('Synthetic offline');};await ui.load();
  check('network failure hides old private summary',nodes['mood-insights-content'].hidden&&nodes['mood-insights-status'].textContent==='Synthetic offline');

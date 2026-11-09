@@ -47,6 +47,7 @@ function page(file) {
   library.setup({ wellness_consent_current: true }); assert.equal(p.calls.length, 0); await p.load();
   assert.equal(p.nodes["resources-list"].children.length, catalog.length);
   const link = p.nodes["resources-list"].querySelectorAll("a")[0];
+  assert.equal(p.nodes["resources-list"].querySelectorAll("a").length,catalog.length);
   assert.equal(link.target, "_blank"); assert.equal(link.rel, "noopener noreferrer");
   checks.push("library loads on demand and renders source links safely");
   p.nodes["resources-category"].value = "rest"; p.nodes["resources-search"].value = "sleep"; await p.load();

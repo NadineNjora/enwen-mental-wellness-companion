@@ -7,11 +7,13 @@
 }
 .enwen-trend h4 { margin: 0; font-size: 1.3rem; }
 .enwen-trend-scroll { overflow-x: auto; }
-.enwen-trend svg { display: block; width: 100%; min-width: 550px; height: auto; }
-.trend-grid { stroke: #ded5e8; stroke-width: 1; }
+.enwen-trend svg { display: block; width: 100%; min-width: 440px; height: auto; }
+.trend-grid { stroke: #ded5e8; stroke-width: 1; stroke-dasharray: 3 5; }
 .trend-label { fill: #514359; font: 12px "Segoe UI", sans-serif; }
-.trend-line { stroke: #6553c9; stroke-width: 3; stroke-linejoin: round; }
-.trend-dot { fill: #ff997e; stroke: #241c36; stroke-width: 2; }
+.trend-line { stroke: #64517e; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.trend-dot { fill: #fffaf2; stroke: #64517e; stroke-width: 2; cursor: pointer; }
+.trend-dot:hover, .trend-dot:focus { fill: #d5edac; stroke-width: 3; outline: none; }
+.trend-selected { min-height: 1.5em; margin-bottom: 0; color: #514359; font-variant-numeric: tabular-nums; }
 .enwen-trend-scroll:focus-visible { outline: 3px solid #6553c9; outline-offset: 3px; }
 #page-journal { --journal-reading-width: 860px; }
 #journal-section-title, #journal-reader-title {

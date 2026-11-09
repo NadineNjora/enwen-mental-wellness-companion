@@ -14,14 +14,15 @@ from sqlalchemy.dialects.postgresql import insert
 from database import engine
 from resource_models import ResourceBookmark, WellnessResource
 from migrate_resource_admin import ensure_resource_schema
+from resource_policy import source
 
 
 def catalog():
     rows = json.loads(Path(__file__).with_name("resources_catalog.json").read_text(encoding="utf-8"))
     ids = set()
     for row in rows:
-        parsed = urlsplit(row["url"])
-        if parsed.scheme != "https" or parsed.hostname not in {"www.who.int", "www.nhs.uk", "studentlife.uonbi.ac.ke", "sumc.strathmore.edu", "www.daystar.ac.ke", "www.kindredcollectivetherapy.com", "www.facebook.com", "counselling.usiu.ac.ke", "counseling.mku.ac.ke", "www.nhsinform.scot"}:
+        _,publisher=source(row['url'])
+        if row['publisher']!=publisher:
             raise ValueError("Catalog must use reviewed publisher URLs.")
         if row["resource_id"] in ids:
             raise ValueError("Duplicate catalog resource ID.")

@@ -7,6 +7,13 @@ SOURCES={
     'www.daystar.ac.ke':'Daystar University','counselling.usiu.ac.ke':'USIU-Africa',
     'counseling.mku.ac.ke':'Mount Kenya University','www.kindredcollectivetherapy.com':'Kindred Collective',
     'www.facebook.com':'Befrienders Kenya',
+    'obsgyn.uonbi.ac.ke':'University of Nairobi',
+    'clubs.strathmore.edu':'Strathmore University',
+    'www.usiu.ac.ke':'USIU-Africa',
+    'www.kcau.ac.ke':'KCA University',
+    'www.ku.ac.ke':'Kenyatta University',
+    'www.jkuat.ac.ke':'JKUAT',
+    'tangaza.ac.ke':'Tangaza University',
 }
 def source(value):
     try:

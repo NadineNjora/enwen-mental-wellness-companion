@@ -26,6 +26,9 @@
     ["🌼 Small wins", "What went a little better than expected today?"],
     ["💛 A kinder voice", "What would I say to a friend who was having a day like mine?"],
     ["🍃 Make some room", "What can wait until tomorrow?"],
+    ["🌱 Between lectures", "What has university been asking of me lately, and what do I need in return?"],
+    ["☁️ Set it down", "What thought keeps circling back, and what would it feel like to put it down for a moment?"],
+    ["🌷 Something to keep", "What small moment made me feel connected to myself or someone else today?"],
     ["🤝 A little support", "Who could I reach out to, and what would I want them to know?"],
   ];
   for (const [name, prompt] of prompts) {

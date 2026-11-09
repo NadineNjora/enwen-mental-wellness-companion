@@ -11,7 +11,7 @@ from uuid import UUID
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, StrictBool, field_validator
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from authentication import AccountResponse, get_current_user
@@ -114,7 +114,7 @@ def notice(response: Response):
         configuration(); ready=True; reason=("Local presentation demo: real email goes only to your verified mailbox. Open invitation links on this computer; this is not public deployment." if local_demo() else "Ready for a deliberate invitation.")
     except (ValueError, TypeError):
         ready=False; reason="Real invitations require an enabled Brevo sender and a deployed public HTTPS response page."
-    return {"notice_version":VERSION,"text":NOTICE,"recipient_notice_version":RECIPIENT_VERSION,
+    return {"notice_version":VERSION,"text":NOTICE,"short_text":"I have this person’s permission to share their name and email. This invitation shares my display name and response links, never my private entries. They can decline or withdraw. Check-in emails need my separate permission.","recipient_notice_version":RECIPIENT_VERSION,
             "recipient_text":RECIPIENT_NOTICE,"ready":ready,"reason":reason,"automatic_alerts_enabled":False}
 
 @router.get("")
@@ -125,6 +125,15 @@ def own(response: Response, user: AccountResponse=Depends(get_current_user)):
             row=db.scalar(select(Invitation).where(Invitation.user_id==user.user_id).order_by(Invitation.created_at.desc(),Invitation.invitation_id.desc()).limit(1))
             return summary(row,db.scalar(select(func.clock_timestamp()))) if row else None
     except SQLAlchemyError: reject(503,"Invitation status is unavailable. Nothing was sent.")
+
+
+@router.get('/capability')
+def capability(response:Response,user:AccountResponse=Depends(get_current_user)):
+    value=notice(response)
+    if local_demo() and user.email.lower()!=os.getenv('LOCAL_DEMO_USER_EMAIL','').strip().lower():
+        value['ready']=False
+        value['reason']='Email invitations are currently limited to the approved presentation account. Wider sending needs the public website setup.'
+    return value
 
 def send_real_invitation(recipient, sender, body, subject="An ENWEN trusted-contact invitation"):
     try:
@@ -159,6 +168,9 @@ def invite(data: Enroll,response: Response,user: AccountResponse=Depends(get_cur
                 return summary(previous,now)
             try: origin,sender=configuration()
             except (ValueError,TypeError): reject(503,"Real invitations need an enabled sender and a public HTTPS response page. Nothing was sent.")
+            db.execute(text('SELECT pg_advisory_xact_lock(hashtext(:key))'),{'key':'enwen-invitation-recipient:'+recipient})
+            recipient_count=db.scalar(select(func.count()).select_from(Invitation).where(Invitation.email==recipient,Invitation.created_at>now-timedelta(days=1)))
+            if recipient_count>=3:reject(429,'This person has already received several invitations today. Please wait before sending another.')
             latest=db.scalar(select(Invitation).where(Invitation.user_id==user.user_id).order_by(Invitation.created_at.desc()).limit(1))
             if latest and now-latest.created_at<timedelta(minutes=1): reject(429,"Wait at least one minute before another invitation.")
             recent=db.scalar(select(func.count()).select_from(Invitation).where(Invitation.user_id==user.user_id,Invitation.created_at>now-timedelta(days=1)))

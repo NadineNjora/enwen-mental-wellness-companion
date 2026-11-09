@@ -7,7 +7,7 @@
   const savedOnly = byId("resources-saved-only"), refresh = byId("resources-refresh");
   const list = byId("resources-list"), message = byId("resources-message");
   const categories = { stress: "🌿 Stress & grounding", studies: "📚 Studies & deadlines", rest: "🌙 Rest & sleep", connection: "🫶 Connection", "human-support": "🤝 Human support" };
-  const publishers = new Set(["www.who.int", "www.nhs.uk", "studentlife.uonbi.ac.ke", "sumc.strathmore.edu", "www.daystar.ac.ke", "www.kindredcollectivetherapy.com", "www.facebook.com", "counselling.usiu.ac.ke", "counseling.mku.ac.ke", "www.nhsinform.scot"]);
+  const publishers = new Set(["www.who.int", "www.nhs.uk", "studentlife.uonbi.ac.ke", "sumc.strathmore.edu", "www.daystar.ac.ke", "www.kindredcollectivetherapy.com", "www.facebook.com", "counselling.usiu.ac.ke", "counseling.mku.ac.ke", "www.nhsinform.scot", "obsgyn.uonbi.ac.ke", "clubs.strathmore.edu", "www.usiu.ac.ke", "www.kcau.ac.ke", "www.ku.ac.ke", "www.jkuat.ac.ke", "tangaza.ac.ke"]);
   let generation = 0, requestNumber = 0, consent = false, loading = false, saving = false;
   let rows = [], controller = null;
 

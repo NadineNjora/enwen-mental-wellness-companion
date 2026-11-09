@@ -5,7 +5,7 @@
   // intervention and reported delivery outcome; it never sends an alert.
   let panel = null, isActive = false, lastEvent = null;
   const statusLabels = {
-    provider_accepted: "Email accepted by provider; delivery is unconfirmed",
+    provider_accepted: "A check-in email is on its way to your trusted person",
     blocked_demo: "Fictional demonstration; no real person notified",
     local_test_captured: "Local demonstration email captured",
     blocked_no_contact: "No trusted contact is saved",
@@ -19,7 +19,7 @@
     delivered: "Delivery confirmed",
     failed: "The alert could not be sent",
     uncertain: "Delivery is not confirmed",
-    pending: "Alert pending",
+    pending: "Checking your contact request",
     not_configured: "Messaging is not connected",
     no_contact: "No trusted contact is saved",
     not_eligible: "The trusted contact is not ready for alerts",
@@ -93,6 +93,8 @@
     isActive = true;
     const fields = document.getElementById("chat-fields");
     if (fields) fields.disabled = true;
+    const composer = document.getElementById("chat-form");
+    if (composer) composer.hidden = true;
 
     const event = typeof data.event_id === "string" ? data.event_id : null;
     const focusNewEvent = target.hidden || !event || event !== lastEvent;
@@ -101,7 +103,7 @@
     heading.id = "chat-safety-heading";
     heading.setAttribute("tabindex", "-1");
     const description = make("p", "safety-support-message", text(data.message,
-      "The AI conversation is paused. Please connect with someone who can support you now."));
+      "The AI conversation is paused. Please connect with someone who can support you now.").replace('If this describes your safety right now, ',''));
     const pauseNote = make("p", "safety-support-pause", "Ordinary AI replies are paused for this conversation.");
     const resources = make("ul", "safety-support-resources");
     let resourceCount = 0;
@@ -143,8 +145,20 @@
     delivery.setAttribute("role", "status");
     const alert = data.alert && typeof data.alert === "object" ? data.alert : {};
     const label = statusLabels[alert.status] || "Delivery is not confirmed";
-    delivery.textContent = label + ". " + text(alert.message,
-      "Do not wait for an app notification before reaching a person directly.", 1200);
+    delivery.textContent = alert.status === "provider_accepted"
+      ? "A check-in email has been submitted for your trusted person. Please reach out directly too; they may not have seen it yet."
+      : label + ". " + text(alert.message,"Please reach out to a person directly too.",1200);
+    const shortStatus={
+      blocked_consent:'No email was sent because required permission is missing. You can reach out to your person directly.',
+      blocked_unconfirmed:'No email was sent because the invitation has not been accepted. Please reach out to someone directly.',
+      blocked_demo:'This fictional test did not contact a person.',
+      blocked_cooldown:'A recent request is already recorded. No additional email was sent.',
+      disabled:'Email sending is unavailable. Please reach out to someone directly.',
+      uncertain:'We could not confirm the email send. Please reach out to someone directly.',
+      pending:'Checking your contact permission. You can reach human support now.',
+      not_requested:'No contact email was requested from this view.'
+    };
+    if(shortStatus[alert.status])delivery.textContent=shortStatus[alert.status];
     alertBox.append(delivery);
 
     const links = make("nav", "safety-support-actions");
@@ -164,6 +178,8 @@
 
   function reset() {
     isActive = false;
+    const composer = document.getElementById("chat-form");
+    if (composer) composer.hidden = false;
     lastEvent = null;
     if (panel) { panel.hidden = true; panel.replaceChildren(); }
     // Never re-enable a composer here: the chat controller owns consent,

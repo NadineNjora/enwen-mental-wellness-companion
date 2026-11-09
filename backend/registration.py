@@ -84,6 +84,8 @@ class RegistrationRequest(BaseModel):
     trusted_contact: TrustedContactRequest
     contact_consent_accepted: StrictBool
     contact_consent_version: str = Field(min_length=1, max_length=30)
+    invite_contact_by_email: StrictBool = False
+    invitation_notice_version: str | None = Field(default=None,max_length=40)
 
     @field_validator("display_name")
     @classmethod
@@ -109,6 +111,10 @@ class RegistrationResponse(BaseModel):
     display_name: str | None
 
 
+class RegistrationResult(RegistrationResponse):
+    contact_invitation_status: str | None = None
+
+
 @router.get("/consent")
 def get_consent_notice(response: Response):
     response.headers["Cache-Control"] = "no-store"
@@ -132,11 +138,14 @@ def get_contact_consent_notice(response: Response):
 
 @router.post(
     "/register",
-    response_model=RegistrationResponse,
+    response_model=RegistrationResult,
     status_code=201,
 )
 def register_account(data: RegistrationRequest, response: Response):
     response.headers["Cache-Control"] = "no-store"
+    from signup_invitations import VERSION as INVITE_VERSION,choice_for,dispatch_once
+    if data.invite_contact_by_email and data.invitation_notice_version!=INVITE_VERSION:
+        raise HTTPException(409,'Read the current signup invitation notice before choosing email.')
 
     if not data.consent_accepted:
         raise HTTPException(
@@ -186,6 +195,8 @@ def register_account(data: RegistrationRequest, response: Response):
 
                 session.add(user)
                 session.flush()
+                if data.invite_contact_by_email:
+                    session.add(choice_for(user.user_id,data.trusted_contact))
 
                 session.add_all([
                     Consent(
@@ -214,7 +225,7 @@ def register_account(data: RegistrationRequest, response: Response):
                     ),
                 ])
 
-                result = RegistrationResponse(
+                result = RegistrationResult(
                     user_id=user.user_id,
                     email=user.email,
                     display_name=user.display_name,
@@ -247,4 +258,8 @@ def register_account(data: RegistrationRequest, response: Response):
             "Registration could not be saved.",
         ) from None
 
+    if data.invite_contact_by_email:
+        try:result.contact_invitation_status=dispatch_once(result.user_id)
+        except Exception:result.contact_invitation_status='uncertain'
+    else:result.contact_invitation_status='not_requested'
     return result

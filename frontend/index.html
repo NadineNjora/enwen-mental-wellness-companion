@@ -10,42 +10,42 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icons/enwen-192.png" type="image/png">
   <link rel="apple-touch-icon" href="/static/icons/enwen-180.png">
-  <link rel="stylesheet" href="/static/pwa.css?v=20261107">
-  <script src="/static/pwa.js?v=20261107" defer></script>
+  <link rel="stylesheet" href="/static/pwa.css?v=20261109-review">
+  <script src="/static/pwa.js?v=20261109-review" defer></script>
 
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/navigation.css">
 
-  <link rel="stylesheet" href="/static/feature_updates.css?v=20261105-refine">
+  <link rel="stylesheet" href="/static/feature_updates.css?v=20261109-review">
 
-<script src="/static/mood_chart.js?v=20261105-refine" defer></script>
-<script src="/static/app.js?v=20261109-resource" defer></script>
-<script src="/static/mood-insights.js?v=20261108-context" defer></script>
-<link rel="stylesheet" href="/static/mood-insights.css?v=20261108-context">
-<script src="/static/community.js?v=20261108" defer></script>
-<link rel="stylesheet" href="/static/community.css?v=20261108">
-<script src="/static/resource-admin.js?v=20261109" defer></script>
-<link rel="stylesheet" href="/static/resource-admin.css?v=20261109">
-<script src="/static/journals.js?v=20261105-refine" defer></script>
-  <script src="/static/trusted-contact.js?v=20261105-refine" defer></script>
-  <script src="/static/live-contacts.js?v=20261108" defer></script>
-  <script src="/static/suggestions.js?v=20261108" defer></script>
-  <script src="/static/contact_setup.js?v=20261105-refine" defer></script>
-  <script src="/static/resources.js?v=20261105-refine" defer></script>
-  <script src="/static/pause.js?v=20261105-refine" defer></script>
-  <script src="/static/safety_support.js?v=20261106-safety" defer></script>
-  <link rel="stylesheet" href="/static/safety_support.css?v=20261106-safety">
-  <script src="/static/chat.js?v=20261107-manage" defer></script>
-  <link rel="stylesheet" href="/static/chat.css?v=20261107-manage">
-<script src="/static/navigation.js?v=20261109-resource" defer></script>
-  <script src="/static/session.js?v=20261106-session" defer></script>
-  <link rel="stylesheet" href="/static/wellness-tools.css?v=20261105-refine">
-  <link rel="stylesheet" href="/static/trusted-contact.css?v=20261105-refine">
-  <link rel="stylesheet" href="/static/prompts.css?v=20261105-refine">
-<script src="/static/student_prompts.js?v=20261108-context" defer></script>
-<script src="/static/reflection_prompts.js?v=20261105-refine" defer></script>
-  <link rel="stylesheet" href="/static/personality.css?v=20261105-refine">
-  <link rel="stylesheet" href="/static/refinements.css?v=20261105-refine">
+<script src="/static/mood_chart.js?v=20261109-review" defer></script>
+<script src="/static/app.js?v=20261109-review" defer></script>
+<script src="/static/mood-insights.js?v=20261109-review" defer></script>
+<link rel="stylesheet" href="/static/mood-insights.css?v=20261109-review">
+<script src="/static/community.js?v=20261109-review" defer></script>
+<link rel="stylesheet" href="/static/community.css?v=20261109-review">
+<script src="/static/resource-admin.js?v=20261109-review" defer></script>
+<link rel="stylesheet" href="/static/resource-admin.css?v=20261109-review">
+<script src="/static/journals.js?v=20261109-review" defer></script>
+  <script src="/static/trusted-contact.js?v=20261109-review" defer></script>
+  <script src="/static/live-contacts.js?v=20261109-review" defer></script>
+  <script src="/static/suggestions.js?v=20261109-review" defer></script>
+
+  <script src="/static/resources.js?v=20261109-review" defer></script>
+  <script src="/static/pause.js?v=20261109-review" defer></script>
+  <script src="/static/safety_support.js?v=20261109-review" defer></script>
+  <link rel="stylesheet" href="/static/safety_support.css?v=20261109-review">
+  <script src="/static/chat.js?v=20261109-review" defer></script>
+  <link rel="stylesheet" href="/static/chat.css?v=20261109-review">
+<script src="/static/navigation.js?v=20261109-review" defer></script>
+  <script src="/static/session.js?v=20261109-review" defer></script>
+  <link rel="stylesheet" href="/static/wellness-tools.css?v=20261109-review">
+  <link rel="stylesheet" href="/static/trusted-contact.css?v=20261109-review">
+  <link rel="stylesheet" href="/static/prompts.css?v=20261109-review">
+<script src="/static/student_prompts.js?v=20261109-review" defer></script>
+<script src="/static/reflection_prompts.js?v=20261109-review" defer></script>
+  <link rel="stylesheet" href="/static/personality.css?v=20261109-review">
+  <link rel="stylesheet" href="/static/refinements.css?v=20261109-review">
 </head>
 
 <body>
@@ -120,6 +120,11 @@
 </p>
       </div>
 
+      <dialog id="invitation-confirm" class="flower-dialog" aria-labelledby="invitation-confirm-title">
+        <span class="dialog-flower" aria-hidden="true">🌸</span><h2 id="invitation-confirm-title">Invite your person?</h2><p id="invitation-confirm-message"></p>
+        <p>Your name and secure response links are shared. Your private entries stay with you.</p>
+        <form method="dialog"><div class="chat-controls"><button value="cancel">Not yet</button><button value="send">Send invitation 🌷</button></div></form>
+      </dialog>
       <!-- Signed-in workspace -->
       <div id="account-panel" hidden>
 
@@ -133,7 +138,7 @@
         >
           <p class="eyebrow">Great stuff 😉 you are connected!</p>
           <h2 id="welcome-title" tabindex="-1"></h2>
-          <p id="account-email" class="muted"></p>
+          <p id="account-email" hidden></p>
           <p id="consent-status" class="account-note"></p>
 
           <p class="muted">What would feel right for you today?</p>
@@ -175,7 +180,6 @@
           <section id="wellness-suggestions" class="contact-setup-panel" aria-labelledby="suggestion-title" hidden>
             <h3 id="suggestion-title">A small next step, chosen for today 🌷</h3>
             <p id="suggestion-message" role="status"></p><ul id="suggestion-links"></ul>
-            <p class="small-note">These starting points use your latest check-in, not a clinical assessment. Your journal text and mood notes are not sent to the AI.</p>
           </section>
           <aside class="contact-home" aria-labelledby="contact-home-title">
             <div>
@@ -194,62 +198,18 @@
           <p class="eyebrow">One person in your corner</p>
           <h2 id="trusted-contact-title">Your trusted contact. <span aria-hidden="true">🫶</span></h2>
           <p class="muted">Someone you trust, kept close. Add your person and review their invitation status here.</p>
-          <p class="account-note">Email delivery is currently local to this computer. Live safety alerts are not enabled.</p>
-          <div class="contact-toolbar">
-            <span id="contact-state" class="contact-state">Not loaded</span>
-            <button id="contact-refresh" type="button" disabled>Refresh status</button>
-          </div>
-          <p id="contact-message" class="status" role="status" aria-live="polite"></p>
-          <section id="contact-setup-panel" class="contact-setup-panel" aria-labelledby="contact-setup-title" hidden>
-            <h3 id="contact-setup-title">Who is in your corner? <span aria-hidden="true">🫶</span></h3>
-            <p>Add a person you trust. Saving their details does not send a message or give them access to your journal.</p>
-            <form id="contact-setup-form">
-              <fieldset id="contact-setup-fields" disabled>
-                <legend>Your trusted person</legend>
-                <div class="contact-setup-grid">
-                  <label for="setup-contact-name">Their name<input id="setup-contact-name" type="text" maxlength="100" required autocomplete="off"></label>
-                  <label for="setup-contact-relationship">Relationship<input id="setup-contact-relationship" type="text" maxlength="50" placeholder="Friend, sibling..." autocomplete="off"></label>
-                  <label for="setup-contact-email">Their email address<input id="setup-contact-email" type="email" maxlength="254" required autocomplete="off"></label>
-                </div>
-                <p id="contact-setup-notice" class="contact-notice">Loading your privacy notice...</p>
-                <label class="contact-ack" for="contact-setup-ack"><input id="contact-setup-ack" type="checkbox" required><span>I have read and accept this trusted-contact notice.</span></label>
-                <button id="contact-setup-save" type="submit">Save my trusted person</button>
-              </fieldset>
-            </form>
-            <p id="contact-setup-message" class="status" role="status" aria-live="polite"></p>
-            <button id="contact-setup-retry" type="button" hidden>Reload the notice</button>
-          </section>
-          <dl id="contact-details" class="contact-details" hidden>
-            <div><dt>Name</dt><dd id="contact-name"></dd></div>
-            <div><dt>Email</dt><dd id="contact-email"></dd></div>
-            <div><dt>Relationship</dt><dd id="contact-relationship"></dd></div>
-          </dl>
-          <p id="contact-invitation-summary" class="muted"></p>
-          <form id="contact-invite-form" hidden>
-            <fieldset id="contact-invite-fields" disabled>
-              <legend>Invite your trusted person</legend>
-              <p id="contact-test-notice" class="contact-notice"></p>
-              <p id="contact-replacement-note" class="small-note" hidden>A replacement makes the previous unused link invalid. Check Mailpit before requesting another invitation.</p>
-              <label class="contact-ack" for="contact-test-ack">
-                <input id="contact-test-ack" type="checkbox" required>
-                <span>I understand the delivery notice above and agree to this invitation.</span>
-              </label>
-              <button id="contact-send" type="submit" disabled>Prepare invitation</button>
-            </fieldset>
-          </form>
-          <p id="contact-send-message" class="status" role="status" aria-live="polite"></p>
           <section class="contact-setup-panel" aria-labelledby="live-contact-title">
-            <h3 id="live-contact-title">Invite your person by real email 🌼</h3>
-            <p>They can accept, decline or withdraw. This enrollment does not switch on automatic alerts.</p>
-            <button id="live-contact-refresh" type="button">Check real invitation status</button>
+            <h3 id="live-contact-title">Someone in your corner 🌼</h3>
+            <p>Invite someone you trust to be a little closer when you need support. They choose whether to accept, and your private writing stays private.</p>
+            <button id="live-contact-refresh" type="button">Refresh invitation status</button>
             <p id="live-contact-details" role="status"></p>
             <form id="live-contact-form"><fieldset id="live-contact-fields" disabled><legend>Your invitation</legend>
               <div class="contact-setup-grid"><label>Their name<input id="live-contact-name" maxlength="100" required autocomplete="off"></label><label>Their email<input id="live-contact-email" type="email" maxlength="254" required autocomplete="off"></label></div>
               <p id="live-contact-notice" class="contact-notice"></p>
-              <label class="contact-ack"><input id="live-contact-ack" type="checkbox" required><span>I have read and agree to this real-email invitation notice.</span></label>
-              <button type="submit">Send real invitation</button>
+              <label class="contact-ack"><input id="live-contact-ack" type="checkbox" required><span>I agree to send this invitation and share my display name.</span></label>
+              <button type="submit">Send invitation 🌷</button>
             </fieldset></form>
-            <button id="live-contact-revoke" type="button" hidden>Withdraw enrollment</button>
+            <button id="live-contact-revoke" type="button" hidden>Remove this trusted person</button>
             <p id="live-contact-message" class="status" role="status"></p>
             <section aria-labelledby="live-alert-title"><h4 id="live-alert-title">Your choice about check-in emails</h4>
               <p id="live-contact-alert-notice" class="contact-notice"></p>
@@ -258,7 +218,6 @@
               <p id="live-contact-alert-status" role="status"></p>
             </section>
           </section>
-          <p class="small-note">After sending, open <a href="http://127.0.0.1:8025/" target="_blank" rel="noopener noreferrer">the local Mailpit inbox</a> on this computer, choose Accept or Decline in the invitation, then return and refresh the status. No mood or journal content is included.</p>
         </section>
 
         <!-- MOOD CHECK-IN -->
@@ -324,8 +283,8 @@
               </div>
 
               <details class="mood-context-picker">
-                <summary>Keep a few factors with this check-in 🌼</summary>
-                <p id="mood-context-help">Pick up to six. These tags help you reflect on your student life; your note stays your own.</p>
+                <summary>What’s been shaping your day? 🌼</summary>
+                <p id="mood-context-help">Some days hold a lot. Choose up to six things that have been on your mind, or simply leave a note below.</p>
                 <div id="mood-context-choices" class="mood-context-choices" role="group" aria-label="Factors in my day" aria-describedby="mood-context-help"></div>
                 <p id="mood-context-status" class="small-note" role="status" aria-live="polite"></p>
               </details>
@@ -371,7 +330,7 @@
           </div>
 
           <p class="muted">
-            Your full history, at a glance. Browse your dated check-ins below the charts.
+            Your history, at a glance.
           </p>
 
           <section id="mood-insights" class="mood-insights" aria-labelledby="mood-insights-title">
@@ -415,12 +374,12 @@
           </div>
           <p id="community-status" class="status" role="status" aria-live="polite"></p>
           <aside id="community-support" class="community-support" hidden><h3>A little human support, first.</h3><p>This submission is held out of the feed for support review. If it describes how you feel right now, reach out to someone you trust or use the human-support resources. Community moderation is not continuously monitored and does not send contact alerts.</p><a href="#/resources">Find human support →</a><a href="#/pause">Take a grounding pause →</a></aside>
-          <section id="community-feed-view"><div class="community-section-heading"><h3>Reflections from fellow students 🌱</h3><button type="button" id="community-refresh">Refresh</button></div><p class="small-note">Account names are hidden from peers. Every published reflection and response has passed community moderation; that is not clinical approval.</p><div id="community-feed" class="community-grid"></div><div class="community-actions"><button type="button" id="community-feed-prev">← Newer</button><button type="button" id="community-feed-next">Older →</button></div></section>
+          <section id="community-feed-view"><div class="community-section-heading"><h3>Reflections from fellow students 🌱</h3><button type="button" id="community-refresh">Refresh</button></div><p class="small-note">A petal from someone else’s day. Each reflection is reviewed before it reaches the garden.</p><div id="community-feed" class="community-grid"></div><div class="community-actions"><button type="button" id="community-feed-prev">← Newer</button><button type="button" id="community-feed-next">Older →</button></div></section>
           <section id="community-write-view" hidden><h3>A reflection you choose to share.</h3><p>This is a separate community submission. Your private journal stays private.</p><form id="community-post-form"><fieldset id="community-post-fields" disabled><legend>Your shared reflection</legend><label for="community-post-title">A title for this moment</label><input id="community-post-title" maxlength="120" required placeholder="A small win between deadlines"><label for="community-post-content">What would you like to share?</label><textarea id="community-post-content" rows="6" maxlength="2000" required placeholder="A thought, a moment, something that helped you feel a little more like yourself…"></textarea><p class="small-note">Up to 2,000 characters. Leave out names, contact details and identifying information.</p><p id="community-post-notice" class="community-notice"></p><label class="community-ack"><input id="community-post-ack" type="checkbox" required><span>I have read this notice and choose to submit this reflection for community review.</span></label><button type="submit">Submit for review 🌼</button></fieldset></form></section>
           <section id="community-mine-view" hidden><div class="community-section-heading"><h3>What you’ve chosen to share</h3><button type="button" id="community-mine-refresh">Refresh my sharing</button></div><p class="small-note">Pending and declined submissions are visible here to you. Withdrawing removes content from the shared feed; your submission and review history are retained.</p><div id="community-mine" class="community-grid"></div><div class="community-actions"><button type="button" id="community-mine-prev">← Newer</button><button type="button" id="community-mine-next">Older →</button></div></section>
           <section id="community-detail-view" hidden><button type="button" id="community-back">← Back to reflections</button><article id="community-detail" class="community-detail"></article><h3>A little encouragement 🫶</h3><div id="community-feedback"></div><div class="community-actions"><button type="button" id="community-feedback-prev">← Earlier responses</button><button type="button" id="community-feedback-next">More responses →</button></div><form id="community-feedback-form"><fieldset id="community-feedback-fields" disabled><legend>Leave a supportive response</legend><label for="community-feedback-content">What would you like them to hear?</label><textarea id="community-feedback-content" maxlength="500" rows="3" required placeholder="Thank you for sharing. Something in your reflection resonated with me…"></textarea><p class="small-note">Up to 500 characters. Offer encouragement, not diagnoses, instructions or medical advice. Responses are reviewed before appearing.</p><p id="community-feedback-notice" class="community-notice"></p><label class="community-ack"><input id="community-feedback-ack" type="checkbox" required><span>I have read the sharing notice and choose to submit this response for review.</span></label><button type="submit">Send for review</button></fieldset></form></section>
           <form id="community-report-form" class="community-report" hidden><h3 id="community-report-title">Report shared content</h3><label for="community-report-reason">What should a moderator review?</label><select id="community-report-reason" required><option value="">Choose a reason</option><option value="privacy">Identifying or private information</option><option value="unsafe">Unsafe content or advice</option><option value="harassment">Harassment or unkind content</option><option value="other">Another community concern</option></select><div class="community-actions"><button type="submit">Send report</button><button id="community-report-cancel" type="button">Cancel</button></div></form>
-          <section id="community-review-view" hidden><div class="community-section-heading"><h3>Community moderation</h3><button type="button" id="community-review-refresh">Refresh queue</button></div><p id="community-review-notice" class="community-notice"></p><p class="small-note">Up to 20 submissions are shown at a time, prioritising support flags and reports. Refresh after decisions. Another moderator must review your own submissions. This role does not open private student journals, moods or chats.</p><div id="community-queue" class="community-grid"></div></section>
+          <section id="community-review-view" hidden><div class="community-section-heading"><h3>Community moderation</h3><button type="button" id="community-review-refresh">Refresh queue</button></div><p id="community-review-notice" class="community-notice"></p><p class="small-note">Review up to 20 submissions at a time. Your own reflections go to another moderator.</p><div id="community-queue" class="community-grid"></div></section>
         </section>
 
         <!-- JOURNAL -->
@@ -530,12 +489,12 @@
         <section id="page-resources" class="app-page" data-page="resources" aria-labelledby="resources-title" hidden>
           <p class="eyebrow">Something to keep close</p>
           <h2 id="resources-title">A little support, at your pace. <span aria-hidden="true">📚</span></h2>
-          <p class="muted">Explore readings from the original publishers. Save what feels useful and come back whenever you like.</p>
+          <p class="muted">A little understanding, a listening ear, or support on campus. Find what meets you where you are, and keep it close.</p>
           <div class="resource-intro">
             <p>Need a moment before you read?</p>
             <a href="#/pause">Try a mindful minute <span aria-hidden="true">🍃</span> →</a>
           </div>
-          <p><a id="resource-admin-open" href="#/resource-admin" hidden>Open the resource desk →</a></p>
+          <p><a id="resource-admin-open" href="#/resource-admin" hidden>Open the library studio →</a></p>
           <form id="resources-filter-form" class="resources-filter-form">
             <fieldset id="resources-fields" disabled>
               <legend>Find something for today</legend>
@@ -567,12 +526,12 @@
         </section>
 
         <section id="page-resource-admin" class="app-page resource-admin" data-page="resource-admin" aria-labelledby="resource-admin-title" hidden>
-          <p class="eyebrow">A thoughtful library 🌿</p><h2 id="resource-admin-title">The resource desk.</h2>
-          <p class="muted">Prepare, review and publish public wellbeing readings. The library and Llama’s source summaries update together.</p><a href="#/resources">← Back to the student library</a>
+          <p class="eyebrow">A thoughtful library 🌿</p><h2 id="resource-admin-title">The library studio.</h2>
+          <p class="muted">Gather thoughtful reads and campus support for the ENWEN community. Add a source, check it with care, then share it when it’s ready.</p><a href="#/resources">← Back to the student library</a>
           <div class="resource-admin-tabs" aria-label="Resource desk views"><button id="resource-admin-library-tab" type="button">Library</button><button id="resource-admin-editor-tab" type="button">Prepare a draft</button><button id="resource-admin-drafts-tab" type="button">Review drafts</button><button id="resource-admin-history-tab" type="button">Change history</button></div>
           <p id="resource-admin-message" class="status" role="status" aria-live="polite"></p>
           <section id="resource-admin-library-view"><div class="resource-admin-heading"><h3>Published and retired readings</h3><button id="resource-admin-refresh" type="button">Refresh</button></div><div id="resource-admin-library" class="resource-admin-grid"></div></section>
-          <section id="resource-admin-editor-view" hidden><h3 id="resource-admin-editor-title">Prepare a new resource</h3><p id="resource-admin-base" class="small-note">New resources start with an unpublished draft.</p>
+          <section id="resource-admin-editor-view" hidden><h3 id="resource-admin-editor-title">Prepare a new resource</h3><p id="resource-admin-base" class="small-note">Found something helpful? Add its link and a short summary here. You can review it before anyone else sees it.</p>
             <details><summary>Permitted public publishers</summary><ul id="resource-admin-sources"></ul><p>These origins are permitted for curation. A permitted origin is not clinical certification. Open the source and check its final destination and audience.</p></details>
             <form id="resource-admin-form"><fieldset id="resource-admin-fields" disabled><legend>The draft</legend><div class="resource-admin-fields-grid"><label for="resource-admin-key">Resource key<input id="resource-admin-key" required minlength="3" maxlength="60" pattern="[a-z0-9][a-z0-9-]{2,59}" placeholder="student-study-breaks"></label><label for="resource-admin-category">Topic<select id="resource-admin-category"><option value="stress">Stress &amp; grounding</option><option value="studies">Studies &amp; deadlines</option><option value="rest">Rest &amp; sleep</option><option value="connection">Connection</option><option value="human-support">Human support</option></select></label></div>
               <label for="resource-admin-name">Display title<input id="resource-admin-name" required maxlength="180"></label><label for="resource-admin-url">Public source URL<input id="resource-admin-url" type="url" required maxlength="500" placeholder="https://www.nhs.uk/…"></label><p class="small-note">The publisher is determined from the permitted source address.</p>
@@ -654,8 +613,8 @@
 
         <section id="page-chat" class="app-page" data-page="chat" aria-labelledby="chat-title" hidden>
           <p class="eyebrow">A thought. A little company. A place to begin.</p>
-          <h2 id="chat-title">Let's talk, at your pace. <span aria-hidden="true">🌼</span></h2>
-          <p>A conversational space for reflection. For immediate danger, seek urgent human help rather than waiting for a reply.</p>
+          <h2 id="chat-title">Meet Nia. Your space to talk. <span aria-hidden="true">🌼</span></h2>
+          <p>A little company for what’s on your mind. Nia is ENWEN’s AI companion, not a counsellor. If you need urgent help, reach out to a person now.</p>
           <section class="chat-history-panel" aria-label="Your saved conversations">
             <h3>Your conversations</h3>
             <p id="chat-history-message" role="status"></p>
@@ -689,7 +648,7 @@
             </fieldset>
           </form>
           <p id="chat-status" role="status" class="status"></p>
-          <p class="small-note">Your conversations are saved privately to your account. Logging out clears them from this screen. <a href="#/resources">Find human support</a> · <a href="#/pause">Take a mindful pause</a></p>
+          <p class="small-note">Your conversations are saved privately to your account. <a href="#/resources">Find human support</a> · <a href="#/pause">Take a mindful pause</a></p>
         </section>
         <button id="logout-button" type="button">
           Log out
@@ -698,9 +657,7 @@
 
       <p id="status" class="status" role="status" aria-live="polite"></p>
 
-      <p class="small-note">
-        Your login stays connected when you refresh. Log out when using a shared device.
-      </p>
+
     </section>
   </main>
 

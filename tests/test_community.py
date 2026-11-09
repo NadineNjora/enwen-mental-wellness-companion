@@ -39,7 +39,7 @@ with engine.connect() as connection:
                 db.add_all([User(user_id=uid,email=str(uid)+'@example.com',display_name='PRIVATE_ACCOUNT_NAME',password_hash='unused') for uid in (author,peer,moderator)]);db.flush()
                 journal=JournalEntry(user_id=author,title='Private only',content='PRIVATE_JOURNAL_NEVER_SHARED');db.add(journal);db.flush();journal_id=journal.journal_id
                 db.add(Role(user_id=moderator));db.commit()
-            check('sharing notice describes pseudonymity and no contact alert','not completely anonymous' in client.get('/community/notice').json()['text'] and 'no trusted-contact email or SMS' in c.NOTICE)
+            check('sharing notice describes pseudonymity and no contact alert','hidden from peers' in client.get('/community/notice').json()['text'] and 'does not alert your contact' in c.NOTICE)
             check('ordinary account is not a moderator',not client.get('/community/notice').json()['is_moderator'])
             check('empty feed contains no invented community entries',client.get('/community/feed').json()==[])
             check('private journal ID cannot be read as community content',client.get('/community/posts/'+str(journal_id)).status_code==404)
@@ -72,7 +72,7 @@ with engine.connect() as connection:
             check('feedback to unknown reflection rejected',client.post('/community/posts/'+str(uuid4())+'/feedback',json={**response_payload,'request_id':str(uuid4())}).status_code==404)
             become(author);check('self-feedback blocked',client.post('/community/posts/'+post_id+'/feedback',json={**response_payload,'request_id':str(uuid4())}).status_code==400)
             become(moderator);check('reviewed encouragement can publish',client.post('/community/moderation/feedback/'+fid,json=decision).status_code==200)
-            become(author);detail=client.get('/community/posts/'+post_id).json();check('approved response is pseudonymous',len(detail['feedback'])==1 and detail['feedback'][0]['author_label']=='A fellow student 🌱' and str(peer) not in str(detail))
+            become(author);detail=client.get('/community/posts/'+post_id).json();check('approved response is pseudonymous',len(detail['feedback'])==1 and detail['feedback'][0]['author_label'].startswith('A petal from ') and str(peer) not in str(detail))
             report=client.post('/community/feedback/'+fid+'/report',json={'reason':'unsafe'});check('published feedback can be reported',report.status_code==201)
             client.post('/community/feedback/'+fid+'/report',json={'reason':'unsafe'});check('duplicate reports are not multiplied',connection.scalar(select(func.count()).select_from(Report))==1)
             become(moderator);q=client.get('/community/moderation/queue').json()['items'];item=next(x for x in q if x['id']==fid)

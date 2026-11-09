@@ -6,7 +6,7 @@ const vm = require("node:vm");
 const checks = [];
 for (const config of [
   { file: "student_prompts.js", prefix: "mood", field: "mood-note", label: 'label[for="mood-note"]', limit: 1000, buttons: 8 },
-  { file: "reflection_prompts.js", prefix: "journal", field: "journal-content", label: 'label[for="journal-title"]', limit: 10000, buttons: 5 },
+  { file: "reflection_prompts.js", prefix: "journal", field: "journal-content", label: 'label[for="journal-title"]', limit: 10000, buttons: 8 },
 ]) {
   const nodes = [];
   const element = () => {

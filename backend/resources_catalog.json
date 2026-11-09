@@ -138,5 +138,75 @@
     "url": "https://www.nhs.uk/mental-health/children-and-young-adults/help-for-teenagers-young-adults-and-students/student-mental-health-counselling/",
     "audience_note": "UK information. Service eligibility and funding arrangements differ in Kenya. Ask your own university about local support. Publisher review listed: March 2023.",
     "source_checked_on": "2026-11-09"
+  },
+  {
+    "resource_id": "uon-wellness-centre",
+    "title": "A place to talk at UoN",
+    "publisher": "University of Nairobi",
+    "category": "human-support",
+    "summary": "The university introduces its Wellness Centre and the kinds of concerns students can bring, including study pressure, relationships and emotional difficulties.",
+    "url": "https://obsgyn.uonbi.ac.ke/student-life-guidance-counselling",
+    "audience_note": "Campus service information. Confirm current availability and appointments with UoN; ENWEN does not make bookings.",
+    "source_checked_on": "2026-11-09"
+  },
+  {
+    "resource_id": "strathmore-mental-health-club",
+    "title": "Finding support together on campus",
+    "publisher": "Strathmore University",
+    "category": "connection",
+    "summary": "A Strathmore Mental Health Club event page describes peer dialogue, creative expression and connecting students with support.",
+    "url": "https://clubs.strathmore.edu/pages/events/01M1NSMB2XX23D41GEEHFQNK0Y",
+    "audience_note": "Past event dated 10 September 2026. Read for campus community context; it is not a current event invitation or counselling appointment.",
+    "source_checked_on": "2026-11-09"
+  },
+  {
+    "resource_id": "usiu-campus-health",
+    "title": "Support through the university years",
+    "publisher": "USIU-Africa",
+    "category": "human-support",
+    "summary": "USIU-Africa outlines counselling, wellness activities and ways to approach its centre for personal, academic, social or emotional concerns.",
+    "url": "https://www.usiu.ac.ke/health-wellness/",
+    "audience_note": "Campus service information. Confirm eligibility, current hours and appointment arrangements with USIU-Africa.",
+    "source_checked_on": "2026-11-09"
+  },
+  {
+    "resource_id": "kca-student-counselling",
+    "title": "Someone to talk to at KCA",
+    "publisher": "KCA University",
+    "category": "human-support",
+    "summary": "KCA describes individual and group counselling, personal development, peer-counsellor training and referrals for students.",
+    "url": "https://www.kcau.ac.ke/counselling-services/",
+    "audience_note": "For KCA students. Use the university’s current booking information and confirm availability directly.",
+    "source_checked_on": "2026-11-09"
+  },
+  {
+    "resource_id": "ku-student-wellbeing",
+    "title": "Finding your support network at KU",
+    "publisher": "Kenyatta University",
+    "category": "human-support",
+    "summary": "KU Student Affairs describes its student welfare work, including health and wellness coordination, disability support, accommodation and bursary services.",
+    "url": "https://www.ku.ac.ke/directorates/dir-student-affairs.html",
+    "audience_note": "Student welfare directory, not a therapy guide. Ask KU which office or service fits your circumstances.",
+    "source_checked_on": "2026-11-09"
+  },
+  {
+    "resource_id": "jkuat-student-support",
+    "title": "A listening place at JKUAT",
+    "publisher": "JKUAT",
+    "category": "human-support",
+    "summary": "JKUAT’s Dean of Students introduces its student welfare role and counselling support, with attention to students’ emotional and social wellbeing.",
+    "url": "https://www.jkuat.ac.ke/department/dean/",
+    "audience_note": "For JKUAT campus support. Check current counselling access and locations directly with the Dean of Students office.",
+    "source_checked_on": "2026-11-09"
+  },
+  {
+    "resource_id": "tangaza-student-connection",
+    "title": "Finding your people at Tangaza",
+    "publisher": "Tangaza University",
+    "category": "connection",
+    "summary": "Tangaza’s student association describes student welfare representation, clubs, peer counselling and creative or wellness-oriented groups.",
+    "url": "https://tangaza.ac.ke/tusa/",
+    "audience_note": "Student association information, not a clinical service. Ask Tangaza about current groups and appropriate professional support when needed.",
+    "source_checked_on": "2026-11-09"
   }
 ]

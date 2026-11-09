@@ -18,7 +18,7 @@
       const response=await fetch("/trusted-contact/live/respond",{method:"POST",cache:"no-store",credentials:"omit",signal:controller.signal,
         headers:{"Content-Type":"application/json"},body:JSON.stringify({token,decision,notice_version:version,acknowledged:true})});
       const data=await response.json();if(!response.ok)throw new Error(typeof data.detail==="string"?data.detail:"Decision could not be confirmed.");
-      status.textContent=`Your choice is recorded: ${data.status}. Automatic alerts are not enabled. Keep the separate withdrawal link in your email.`;token=null;
+      status.textContent=`Your choice is recorded: ${data.status}. Check-in emails also need the student’s permission. Keep your withdrawal link if you later change your mind.`;token=null;
     }catch(e){status.textContent=e.name==="AbortError"?"Outcome unconfirmed. No automatic retry was made. Contact the student before retrying.":e.message;fields.disabled=false;}
     finally{clearTimeout(timer);busy=false;}
   });

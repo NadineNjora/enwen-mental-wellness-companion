@@ -42,7 +42,8 @@ def main():
             tables = set(inspect(connection).get_table_names())
         expected = {"users", "consents", "browser_sessions", "mood_entries", "journal_entries",
                     "trusted_contacts", "trusted_contact_invitations", "wellness_resources",
-                    "resource_bookmarks", "chat_conversations", "chat_turns", "deleted_chat_requests", "safety_alerts", "live_contact_invitations", "knowledge_passages", "live_email_alerts", "live_email_permissions"}
+                    "resource_bookmarks", "chat_conversations", "chat_turns", "deleted_chat_requests", "safety_alerts", "live_contact_invitations", "knowledge_passages", "live_email_alerts", "live_email_permissions",
+                    "mood_contexts", "community_posts", "community_feedback", "community_reports", "community_reviews", "community_moderators", "resource_curators", "resource_drafts", "resource_audit", "signup_invitation_choices"}
         missing = sorted(expected - tables)
         record("PostgreSQL", "not_ready" if missing else "ready",
                "Missing tables: " + ", ".join(missing) if missing else "Connected; expected tables exist. No student records were read.", True)
@@ -70,7 +71,7 @@ def main():
            "Automatic live contact alerts are not connected. Separate Brevo/Twilio/Africa's Talking own-phone test connectors exist; this check never invokes them.")
     email_configured=bool(os.getenv("BREVO_API_KEY", "").strip() and os.getenv("EMAIL_FROM_ADDRESS", "").strip())
     record("Real email", "configured" if email_configured else "not_ready",
-           "Checks configuration presence only, not delivery. The developer confirmed the earlier own-mailbox test. Practice invitations still use Mailpit.")
+           "Checks configuration presence only, not delivery. The student invitation screen uses Brevo; Mailpit is retained only for developer practice tests.")
     try:
         invitation=local_json("/trusted-contact/live/notice")
         record("Real contact invitations", "ready" if invitation.get("ready") is True else "not_ready", invitation.get("reason", "Check deployment and sender configuration."))

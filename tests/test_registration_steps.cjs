@@ -118,6 +118,7 @@ async function page(responder = baseline) {
     consent_accepted: true, consent_version: "prototype-1",
     trusted_contact: { full_name: "Fictional Friend", relationship_label: "Friend", email: "friend@example.com" },
     contact_consent_accepted: true, contact_consent_version: "contact-test-1",
+    invite_contact_by_email: false, invitation_notice_version: null,
   });
   finish(); await sending;
   assert.equal(p.elements["register-form"].hidden, true);
@@ -158,5 +159,12 @@ async function page(responder = baseline) {
   assert.equal(p.elements["register-consent"].checked, false);
   checks.push("browser restore clears passwords and refreshes consent instead of resubmitting");
 
+  p = await page((url,options)=>url==='/auth/signup-invitation-notice'?reply(200,{notice_version:'signup-invite-1',text:'Separate synthetic signup invitation choice',ready:true}):options.method==='POST'?reply(201,{user_id:'synthetic',email:'student@example.com',contact_invitation_status:'provider_accepted'}):baseline(url));
+  assert.equal(p.elements['signup-invitation-ack'].checked,false);
+  p.account();await p.submit();p.contact();p.elements['signup-invitation-ack'].checked=true;await p.submit();
+  assert.equal(JSON.parse(p.posts()[0].options.body).invite_contact_by_email,true);
+  assert.equal(JSON.parse(p.posts()[0].options.body).invitation_notice_version,'signup-invite-1');
+  assert.match(p.elements['registration-status'].textContent,/submitted by email/);
+  checks.push('signup invitation is separately unticked and sends only the explicit current choice');
   console.log(JSON.stringify({ passed: checks.length, checks, requests: "simulated; no database writes" }, null, 2));
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,84 +1,44 @@
 "use strict";
-
 (() => {
-  const list = document.querySelector("#mood-history-list");
-  if (!list) return;
-  const ns = "http://www.w3.org/2000/svg";
-  const names = { 5: ["", "Very low", "Low", "Okay", "Good", "Great"],
-    10: ["", "Very low", "Low", "Down", "A little low", "In between", "Okay", "Pretty good", "Good", "Very good", "Great"] };
-  const panel = document.createElement("section");
-  panel.className = "enwen-trend";
-  panel.setAttribute("aria-labelledby", "mood-trend-title");
-  const heading = document.createElement("h4"); heading.id = "mood-trend-title";
-  heading.textContent = "Your moods, over time 🌱";
-  const summary = document.createElement("p"); summary.className = "muted";
-  const viewport = document.createElement("div"); viewport.className = "enwen-trend-scroll";
-  viewport.tabIndex = 0; viewport.setAttribute("role", "region");
-  viewport.setAttribute("aria-label", "Complete mood history charts. Scroll horizontally on small screens.");
-  const detail = document.createElement("p"); detail.className = "small-note";
-  detail.textContent = "Every saved check-in keeps its original score. Earlier entries are out of 5; newer entries are out of 10. The panels use the same dates, with separate score scales. Lines connect recorded check-ins, not measurements between them. Times are Nairobi (EAT).";
-  panel.append(heading, summary, viewport, detail); list.before(panel);
-  function node(tag, attrs = {}, text) {
-    const element = document.createElementNS(ns, tag);
-    for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, String(value));
-    if (text !== undefined) element.textContent = text;
-    return element;
+  const list=document.querySelector('#mood-history-list'); if(!list)return;
+  const ns='http://www.w3.org/2000/svg',panel=document.createElement('section');
+  panel.className='enwen-trend';panel.setAttribute('aria-labelledby','mood-trend-title');
+  const heading=document.createElement('h4');heading.id='mood-trend-title';heading.textContent='Your moods, over time 🌱';
+  const summary=document.createElement('p');summary.className='muted';
+  const viewport=document.createElement('div');viewport.className='enwen-trend-scroll';
+  const detail=document.createElement('p');detail.className='trend-selected';detail.setAttribute('role','status');
+  let lastEntries=null,lastWidth=0;
+  panel.append(heading,summary,viewport,detail);list.before(panel);
+  const score=entry=>Math.round(entry.mood_score*10/entry.scale_max*10)/10;
+  function node(tag,attrs={},text){const n=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,String(v));if(text!==undefined)n.textContent=text;return n;}
+  function date(time,full=false){return new Date(time).toLocaleString('en-KE',{timeZone:'Africa/Nairobi',day:'numeric',month:'short',...(full?{year:'numeric',hour:'2-digit',minute:'2-digit'}:{})});}
+  function clear(message='Your first check-in will start your story here.'){lastEntries=null;lastWidth=0;viewport.replaceChildren();viewport.hidden=true;detail.hidden=true;summary.textContent=message;}
+  function render(entries){
+    if(entries.some(e=>![5,10].includes(e.scale_max)||!Number.isInteger(e.mood_score)||e.mood_score<1||e.mood_score>e.scale_max||!Number.isFinite(Date.parse(e.created_at)))){clear('Your graph could not load. Try refreshing your history.');return;}
+    const points=entries.map(e=>({score:score(e),time:Date.parse(e.created_at)})).sort((a,b)=>a.time-b.time);
+    if(!points.length){clear();return;}
+    lastEntries=entries;lastWidth=viewport.clientWidth||900;
+    const start=points[0].time,end=points[points.length-1].time,w=Math.max(440,Math.min(1000,viewport.clientWidth||900)),h=330,l=42,r=w-22,t=28,b=270;
+    const x=time=>start===end?(l+r)/2:l+(time-start)/(end-start)*(r-l),y=value=>b-value/10*(b-t);
+    const svg=node('svg',{viewBox:`0 0 ${w} ${h}`,role:'img','aria-labelledby':'mood-chart-title mood-chart-description'});
+    svg.append(node('title',{id:'mood-chart-title'},'Your check-ins out of ten'),node('desc',{id:'mood-chart-description'},'All saved check-ins on a shared ten-point display. Focus a point to hear its score and date. Lines join recorded moments.'));
+    const defs=node('defs'),gradient=node('linearGradient',{id:'mood-area',x1:'0',y1:'0',x2:'0',y2:'1'});
+    gradient.append(node('stop',{offset:'0%','stop-color':'#a68ad5','stop-opacity':'.32'}),node('stop',{offset:'100%','stop-color':'#a68ad5','stop-opacity':'.02'}));defs.append(gradient);svg.append(defs);
+    for(const value of [0,2,4,6,8,10])svg.append(node('line',{x1:l,x2:r,y1:y(value),y2:y(value),class:'trend-grid'}),node('text',{x:l-15,y:y(value)+4,'text-anchor':'end',class:'trend-label'},value));
+    const coords=points.map(p=>`${x(p.time)},${y(p.score)}`).join(' ');
+    if(points.length>1)svg.append(node('polygon',{points:`${l},${b} ${coords} ${r},${b}`,fill:'url(#mood-area)'}),node('polyline',{points:coords,fill:'none',class:'trend-line'}));
+    const select=p=>{detail.textContent=`${date(p.time,true)} · ${p.score}/10`;};
+    for(const p of points){const label=`${date(p.time,true)}: ${p.score} out of 10`,dot=node('circle',{cx:x(p.time),cy:y(p.score),r:5,class:'trend-dot',tabindex:0,'aria-label':label});dot.append(node('title',{},label));dot.addEventListener('focus',()=>select(p));dot.addEventListener('mouseenter',()=>select(p));dot.addEventListener('click',()=>select(p));svg.append(dot);}
+    const ticks=start===end?[start]:Array.from({length:5},(_,i)=>start+(end-start)*i/4);
+    ticks.forEach((time,i)=>svg.append(node('text',{x:x(time),y:b+30,'text-anchor':i===0?'start':i===ticks.length-1?'end':'middle',class:'trend-label'},date(time))));
+    svg.append(node('text',{x:r,y:15,'text-anchor':'end',class:'trend-label'},'Mood / 10'));
+    summary.textContent=`${points.length} moments · ${date(start)} — ${date(end)}`;
+    viewport.replaceChildren(svg);viewport.hidden=false;detail.hidden=false;select(points[points.length-1]);
   }
-  function date(time, full = false) {
-    return new Date(time).toLocaleString("en-KE", { timeZone: "Africa/Nairobi",
-      day: "numeric", month: "short", ...(full ? {year: "numeric"} : {}),
-      hour: "2-digit", minute: "2-digit", hour12: false });
-  }
-  function clear(message = "Your first saved check-in will start your graph.") {
-    viewport.replaceChildren(); viewport.hidden = true; detail.hidden = true;
-    summary.textContent = message;
-  }
-  function render(entries) {
-    const points = entries.map(entry => ({score: entry.mood_score, scale: entry.scale_max,
-      time: typeof entry.created_at === "string" ? Date.parse(entry.created_at) : NaN}));
-    if (points.some(p => ![5, 10].includes(p.scale) || !Number.isInteger(p.score)
-      || p.score < 1 || p.score > p.scale || !Number.isFinite(p.time))) {
-      clear("The graph could not read these records. Please refresh your history."); return;
-    }
-    points.sort((a, b) => a.time - b.time);
-    if (!points.length) { clear(); return; }
-    const start = points[0].time, end = points[points.length - 1].time;
-    summary.textContent = points.length + " saved check-in" + (points.length === 1 ? "" : "s")
-      + " · " + date(start, true) + " to " + date(end, true);
-    viewport.replaceChildren();
-    for (const scale of [5, 10]) {
-      const group = points.filter(p => p.scale === scale);
-      if (!group.length) continue;
-      const label = document.createElement("h5");
-      label.className = "trend-scale-heading";
-      label.textContent = (scale === 5 ? "Earlier check-ins · " : "Current check-ins · ")
-        + "1–" + scale + " scale · " + group.length + " entries";
-      const width = 780, height = scale === 5 ? 310 : 420;
-      const left = 128, right = width - 32, top = 24, bottom = height - 75;
-      const x = time => start === end ? (left + right) / 2 : left + (time - start) / (end - start) * (right - left);
-      const y = score => bottom - (score - 1) / (scale - 1) * (bottom - top);
-      const titleId = "mood-chart-title-" + scale, descId = "mood-chart-description-" + scale;
-      const svg = node("svg", {viewBox: "0 0 " + width + " " + height, role: "img", "aria-labelledby": titleId + " " + descId});
-      svg.append(node("title", {id: titleId}, "Recorded moods on the original 1 to " + scale + " scale"),
-        node("desc", {id: descId}, group.length + " check-ins. Dates span " + date(start, true)
-          + " to " + date(end, true) + ". Original scores are retained; full records follow below."));
-      for (let score = 1; score <= scale; score++) svg.append(
-        node("line", {x1: left, y1: y(score), x2: right, y2: y(score), class: "trend-grid"}),
-        node("text", {x: left - 12, y: y(score) + 4, "text-anchor": "end", class: "trend-label"}, score + " · " + names[scale][score]));
-      if (group.length > 1) svg.append(node("polyline", {points: group.map(p => x(p.time) + "," + y(p.score)).join(" "), fill: "none", class: "trend-line"}));
-      for (const point of group) {
-        const dot = node("circle", {cx: x(point.time), cy: y(point.score), r: 5.5, class: scale === 5 ? "trend-dot trend-dot-earlier" : "trend-dot"});
-        dot.append(node("title", {}, date(point.time, true) + " EAT: " + point.score + "/" + scale + " · " + names[scale][point.score]));
-        svg.append(dot);
-      }
-      const ticks = start === end ? [start] : [start, start + (end - start) / 2, end];
-      ticks.forEach((time, i) => svg.append(node("text", {x: x(time), y: bottom + 29,
-        "text-anchor": ticks.length === 1 ? "middle" : i === 0 ? "start" : i === 2 ? "end" : "middle",
-        class: "trend-label"}, date(time))));
-      svg.append(node("text", {x: (left + right) / 2, y: height - 12, "text-anchor": "middle", class: "trend-label"}, "Date and time · Nairobi (EAT)"));
-      viewport.append(label, svg);
-    }
-    viewport.hidden = false; detail.hidden = false;
-  }
-  window.enwenMoodChart = Object.freeze({clear, render}); clear();
+  window.enwenMoodChart=Object.freeze({clear,render,score});clear();
+  // History may arrive while its page is hidden. Refit once visible, and on resize.
+  if(typeof ResizeObserver==='function')new ResizeObserver(()=>{
+    const width=viewport.clientWidth;
+    if(lastEntries&&width>0&&Math.round(width)!==Math.round(lastWidth))render(lastEntries);
+  }).observe(viewport);
 })();

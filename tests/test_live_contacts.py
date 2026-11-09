@@ -43,6 +43,9 @@ with engine.connect() as connection:
                 db.add(Consent(user_id=uid,consent_type='wellness_use',notice_version=CONSENT_VERSION,notice_text='Synthetic',decision='accepted'));db.commit()
             client=stack.enter_context(TestClient(app));base='/trusted-contact/live'
             check('notice ready and non-clinical',client.get(base+'/notice').json()['ready'] and not client.get(base+'/notice').json()['automatic_alerts_enabled'])
+            check('student capability matches production readiness',client.get(base+'/capability').json()['ready'])
+            with patch.dict(module.os.environ,{'CONTACT_DELIVERY_MODE':'local_demo','LOCAL_DEMO_USER_EMAIL':'student@example.com'}):
+                check('ordinary accounts see laptop delivery restriction before submitting',client.get(base+'/capability').json()['ready'] is False)
             for origin in ('http://127.0.0.1:8000','https://127.0.0.1','https://localhost','https://local.internal','https://user:pass@public.org','https://public.org/path'):
                 with patch.dict(module.os.environ,{'PUBLIC_APP_URL':origin}):check('unreachable/unsafe origin blocked '+origin,client.get(base+'/notice').json()['ready'] is False)
             with patch.dict(module.os.environ,{'PUBLIC_APP_URL':''}):check('deployment absence prevents send',client.post(base,json=body()).status_code==503 and not mail)

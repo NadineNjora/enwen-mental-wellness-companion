@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/register.css?v=20261104-two-steps">
   <link rel="stylesheet" href="/static/personality.css?v=20261104-type-scale10">
-  <script src="/static/register.js?v=20261105-refine" defer></script>
+  <script src="/static/register.js?v=20261109-review" defer></script>
 </head>
 <body class="registration-page">
   <header class="site-header">
@@ -115,6 +115,12 @@
               <input id="contact-consent" name="contact_consent_accepted" type="checkbox" required>
               <span>I have read and accept this trusted-contact privacy notice.</span>
             </label>
+            <section id="signup-invitation-choice" class="registration-notice" hidden aria-labelledby="signup-invitation-heading">
+              <h3 id="signup-invitation-heading">Invite your person by email 🌷</h3>
+              <p id="signup-invitation-notice"></p>
+              <label class="consent-choice"><input id="signup-invitation-ack" type="checkbox"><span>After creating my account, send this person an invitation.</span></label>
+              <p id="signup-invitation-availability" class="field-hint"></p>
+            </section>
           </section>
           <div class="registration-actions">
             <button id="register-back" class="secondary-button" type="button" hidden>← Back</button>
@@ -126,7 +132,7 @@
       <button id="reload-notices" class="secondary-button" type="button" hidden>Retry loading consent notices</button>
       <div id="registration-success" hidden>
         <span class="success-mark" aria-hidden="true">✓</span>
-        <p>Your account and trusted person are saved. No invitation or alert email was sent.</p>
+        <p>Your account and trusted person are saved. Your invitation choice and status are shown below.</p>
         <a id="registration-login-link" class="account-link login-action" href="/#/login" hidden>Continue to log in →</a>
       </div>
       <a id="registration-check-login" class="account-link" href="/#/login" hidden>Check by logging in →</a>

@@ -16,14 +16,10 @@ from knowledge import KnowledgePassage, FIELDS
 from resource_policy import SOURCES,source,MAX_ACTIVE_RESOURCES
 
 router=APIRouter(prefix='/resource-admin',tags=['Public resource curation'])
-VERSION='resource-review-1'
+VERSION='resource-review-2'
 RETIRE_VERSION='resource-retire-1'
-RETIRE_NOTICE=('I choose to retire this public resource and have supplied the reason. It will be excluded from new library results and new AI retrieval. Student bookmarks, old chat citations and public-resource revision history will be retained. Restoring it requires a fresh source-reviewed draft. This action does not edit or delete private student records.')
-NOTICE=('I have opened this public source today and checked the final destination, publisher, summary and audience limitations. '
- 'The summary is in my own words, follows the source, and does not add diagnoses, treatment claims or instructions to the AI. '
- 'I understand publication changes the student resource library and the public-summary corpus used by Llama. '
- 'Source review is not clinical certification. Retirement removes a resource from new library results and new AI retrieval; bookmarks and previously saved chat citations are retained. '
- 'My decision and before/after public metadata are kept in the revision history. This role does not grant access to private student records.')
+RETIRE_NOTICE=('I choose to remove this reading from the library and Nia’s future suggestions. Saved links and change history remain. A fresh source review is needed to restore it.')
+NOTICE=('I opened this source today and checked its publisher, summary and who it is for. I choose to share it in the library and Nia’s public reading collection. This is source review, not clinical approval. My decision and changes are recorded.')
 ResourceId=Annotated[str,StringConstraints(pattern=r'^[a-z0-9][a-z0-9-]{2,59}$')]
 Category=Literal['stress','studies','rest','connection','human-support']
 

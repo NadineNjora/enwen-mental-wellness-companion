@@ -49,7 +49,7 @@ MESSAGES={'disabled':'Live check-in emails are disabled. No real notification wa
  'blocked_consent':'Current live-email permission is missing or withdrawn. No real notification was sent.',
  'blocked_unconfirmed':'No currently accepted real contact agreement is available. No real notification was sent.',
  'blocked_cooldown':'A recent check-in request is already recorded. No duplicate email was sent.',
- 'provider_accepted':'Brevo accepted a minimal check-in email. Inbox delivery and a human response are not confirmed.',
+ 'provider_accepted':'A check-in email has been submitted for your trusted person. Please reach out directly too; delivery and a response are not confirmed.',
  'uncertain':'Email acceptance is not confirmed. No automatic retry occurred; contact someone directly instead of waiting.'}
 def result(row):
     status='uncertain' if row.status=='dispatching' else row.status
@@ -67,7 +67,7 @@ def read_permission(response:Response,user:AccountResponse=Depends(get_current_u
     response.headers['Cache-Control']='no-store'
     with Session(engine) as db:
         recipient=db.scalar(select(Invitation).where(Invitation.user_id==user.user_id,Invitation.decision=='accepted',Invitation.revoked_at.is_(None),Invitation.recipient_notice_version==RECIPIENT_VERSION).order_by(Invitation.created_at.desc()).limit(1))
-        return {'notice_version':VERSION,'text':NOTICE,'accepted':agreed(db,user.user_id,'live_email_alert',VERSION,recipient),'delivery_enabled':os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true'}
+        return {'notice_version':VERSION,'text':NOTICE,'short_text':'I allow ENWEN to ask my accepted trusted person to check in when chat messages suggest danger. It shares my name, not my private words or scores. Signals may be wrong or missed. I can turn this off; my person can withdraw. Email and a response are not guaranteed.','accepted':agreed(db,user.user_id,'live_email_alert',VERSION,recipient),'delivery_enabled':os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true'}
 @router.post('')
 def permission(data:Permission,response:Response,user:AccountResponse=Depends(get_current_user)):
     response.headers['Cache-Control']='no-store'
@@ -103,8 +103,8 @@ def create_live_alert(user_id,request_id,demonstration=False):
                 except (ValueError,TypeError):status='disabled'
                 else:
                     status='dispatching';recipient=enrollment.email
-                    body=("ENWEN recorded an automated request for a human check-in for "+enrollment.shared_student_name+". "
-                          "You agreed to receive these messages as their trusted contact. Please check in directly if you can. "
+                    body=("We’re reaching out on behalf of "+enrollment.shared_student_name+". They may be having a difficult moment and could use a familiar, caring voice. "
+                          "As their trusted person, please call or message them when you can, listen without judgement, and ask what support would help. "
                           "This signal can be wrong and is not a clinical assessment or emergency dispatch. No private conversation, journal or mood text is included. "
                           "To withdraw, use the separate withdrawal link in your original ENWEN invitation email.")
                     if local_demo():body=("PRESENTATION DEMONSTRATION ONLY — NO REAL EMERGENCY. "
@@ -115,7 +115,7 @@ def create_live_alert(user_id,request_id,demonstration=False):
         db.add(row);db.flush();identifier=row.event_id
         if recipient is None:return result(row)
     reference=None
-    try:reference=send_real_invitation(recipient,sender,body,subject='ENWEN DEMO: automatic check-in test' if local_demo() else 'ENWEN: a request to check in')
+    try:reference=send_real_invitation(recipient,sender,body,subject='ENWEN DEMO: automatic check-in test' if local_demo() else 'Your trusted person needs you — ENWEN')
     except EmailServiceError:pass
     with Session(engine) as db,db.begin():
         row=db.scalar(select(LiveEmailAlert).where(LiveEmailAlert.event_id==identifier).with_for_update())

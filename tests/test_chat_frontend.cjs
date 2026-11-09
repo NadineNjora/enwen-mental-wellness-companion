@@ -202,5 +202,12 @@ const texts=node=>[node.textContent,...node.children.map(texts)].join(" ");
   await p.nodes["chat-rename-form"].fire("submit");assert.equal(p.nodes["chat-active-title"].textContent,'<img src=x onerror="bad()">');
   assert.equal(p.nodes["chat-active-title"].children.length,0);checks.push("renamed markup is rendered as plain text");
 
+  p=page();await p.setup();let finishUrgent;
+  p.respond((url,options)=>url==='/chat/screen'?response(200,{urgent:true,support}):url==='/chat'?new Promise(resolve=>finishUrgent=()=>resolve(response(200,{reply:'Synthetic help',safety:support,history_saved:true,conversation_id:cid,turn_id:other}))):p.baseline(url,options));
+  const urgentPending=p.send('Fictional test: I want to swallow poison');await tick();
+  assert.equal(p.safetyCalls.length,1);assert.equal(p.nodes['chat-fields'].disabled,true);assert.ok(finishUrgent);
+  finishUrgent();await urgentPending;assert.equal(p.safetyCalls.length,2);
+  checks.push('human support appears before the chat and notification request completes');
+
   console.log(JSON.stringify({passed:checks.length,checks,scope:"Synthetic DOM/API only; no private records, AI requests or notifications."},null,2));
 })().catch(error=>{console.error(error);process.exitCode=1;});

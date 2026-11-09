@@ -11,8 +11,8 @@
     by('mood-insights-unlabelled').textContent='';by('mood-insights-explanation').textContent='';status.textContent='';period.disabled=true;
   }
   function selection(){return [...boxes].filter(([,box])=>box.checked).map(([key])=>key);}
-  function count(){contextStatus.textContent=selection().length+' of 6 factors selected. You can save without adding any.';}
-  function choose(key){const box=boxes.get(key);if(!enabled||!box)return false;if(!box.checked&&selection().length>=6){contextStatus.textContent='Six factors are selected. Untick one to choose another.';return false;}box.checked=true;count();return true;}
+  function count(){contextStatus.textContent=(selection().length?selection().length+' of 6 chosen · A little picture of your day.':'Choose what feels true for you today.');}
+  function choose(key){const box=boxes.get(key);if(!enabled||!box)return false;if(!box.checked&&selection().length>=6){contextStatus.textContent='You’ve chosen six. Let one go to make room for another.';return false;}box.checked=true;count();return true;}
   function label(key){const o=options.get(key);return o?o.emoji+' '+o.label:key;}
   async function get(path,controller,session,token){
     const timeout=setTimeout(()=>controller.abort(),15000);
@@ -46,15 +46,15 @@
     const metrics=by('mood-insights-metrics');metrics.replaceChildren();
     const card=(value,label)=>{const n=element('div',undefined,'mood-insights-metric');n.append(element('strong',value),element('span',label));metrics.append(n);};
     card(data.total_checkins,'Saved check-ins');card(data.days_with_checkins,'Days you checked in');
-    for(const scale of data.scale_summaries)card(scale.average_score+'/'+scale.scale_max,'Recorded average · '+scale.count+' on the 1–'+scale.scale_max+' scale');
+    if(data.normalised_summary?.average_score!==null&&data.normalised_summary)card(data.normalised_summary.average_score+'/10','Your average check-in');
     const factors=by('mood-insights-factors');factors.replaceChildren();
     for(const factor of data.contexts)factors.append(element('li',factor.emoji+' '+factor.label+' · '+factor.count+' check-in'+(factor.count===1?'':'s')));
     if(!data.contexts.length)factors.append(element('li','No factors tagged in this period. Add a few to a future check-in if they feel useful.'));
-    by('mood-insights-unlabelled').textContent=data.unlabelled_checkins+' check-in'+(data.unlabelled_checkins===1?'':'s')+' without factor tags. Your original notes stay unchanged.';
+    by('mood-insights-unlabelled').textContent='';
     const times=by('mood-insights-times');times.replaceChildren();
     for(const time of data.times){const row=element('li',time.label+' · '+time.count);const bar=element('progress');bar.max=Math.max(1,data.total_checkins);bar.value=time.count;bar.setAttribute('aria-label',time.label+': '+time.count+' check-ins');row.append(bar);times.append(row);}
     times.append(element('li',data.weekdays.map(day=>day.label+' '+day.count).join(' · ')));
-    by('mood-insights-explanation').textContent=data.explanation;
+    by('mood-insights-explanation').textContent='';
     status.textContent=data.start_date+' to '+data.end_date+' · Nairobi time · '+(data.total_checkins?'Your recorded moments, with a little perspective.':'Your next check-in can start this story.');
     content.hidden=false;
   }

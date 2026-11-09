@@ -5,6 +5,7 @@ from models import Base
 from mood_context_models import MoodContext
 from community_models import CommunityModerator,CommunityPost,CommunityFeedback,CommunityReport,CommunityReview
 from resource_admin_models import ResourceCurator,ResourceDraft,ResourceAudit
+from signup_invitation_models import SignupInvitationChoice
 from journal_models import JournalEntry
 from trusted_contact_models import TrustedContact
 from contact_invitation_models import TrustedContactInvitation
@@ -45,6 +46,7 @@ def create_tables():
         "resource_curators",
         "resource_drafts",
         "resource_audit",
+        "signup_invitation_choices",
         "journal_entries",
         "trusted_contacts",
         "trusted_contact_invitations",

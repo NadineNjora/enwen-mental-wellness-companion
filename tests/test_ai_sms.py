@@ -116,11 +116,11 @@ with patch.dict(os.environ,{"AI_PROVIDER":"ollama", "GROQ_API_KEY":"unused-groq-
     call=transport.post.call_args
     check("inference stays on loopback",call.args[0]=="http://127.0.0.1:11434/api/chat")
     check("cloud credentials never sent to local model",call.kwargs["headers"]=={})
-    check("local context and generation bounded",call.kwargs["json"]["options"]["num_ctx"]==4096 and call.kwargs["json"]["options"]["num_predict"]==256 and call.kwargs["json"]["stream"] is False)
+    check("local context and generation bounded",call.kwargs["json"]["options"]["num_ctx"]==4096 and call.kwargs["json"]["options"]["num_predict"]==96 and call.kwargs["json"]["stream"] is False)
     app.dependency_overrides[get_current_user]=lambda: profile
     with TestClient(app) as client:
         notice=client.get("/chat/notice").json()
-        check("local notice describes local processing accurately",notice["local"] is True and "local Ollama" in notice["notice_text"] and notice["configured"] is True)
+        check("local notice describes local processing accurately",notice["local"] is True and "host computer" in notice["notice_text"] and notice["configured"] is True)
         check("cloud acknowledgement cannot authorise local processing",client.post("/chat",json=payload).status_code==409)
         ai_chat._calls.clear()
         current_payload={**payload,"notice_version":notice["notice_version"]}

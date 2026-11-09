@@ -11,7 +11,7 @@ from fastapi import APIRouter, Response
 
 router = APIRouter(prefix="/safety", tags=["Immediate support"])
 SUPPORT_MESSAGE = ("Let's pause the AI conversation and make room for human support. "
-                   "If this describes your safety right now, call Kenya's emergency number or ask someone nearby "
+                   "Call Kenya's emergency number or ask someone nearby "
                    "to stay with you while you contact help. ENWEN cannot dispatch emergency services. "
                    "You do not need to wait for an AI reply or a contact-alert confirmation to seek help.")
 RESOURCES = [
@@ -40,7 +40,7 @@ def support_signal(text):
     value = normalise(text)
     # Negation is scoped to a clause, so a later 'but I am about to...' still triggers.
     clauses = re.split(r"[.!?;\n]+|\bbut\b|\bhowever\b", value)
-    action = r"(?:kill(?:ing)?\s+myself|end(?:ing)?\s+my\s+life(?!\s+drawing)|(?:take|taking)\s+my\s+own\s+life|hurt(?:ing)?\s+myself|harm(?:ing)?\s+myself|(?:die|dying)(?!\s+(?:my\s+hair|laughing))|jump(?:ing)?\s+(?:off|from)\s+(?:(?:a|the|this)\s+)?(?:(?:tall|high|nearby)\s+)?(?:building|roof|bridge|balcony|ledge)|overdos(?:e|ing)|cut(?:ting)?\s+myself)\b"
+    action = r"(?:kill(?:ing)?\s+myself|end(?:ing)?\s+my\s+life(?!\s+drawing)|(?:take|taking)\s+my\s+own\s+life|hurt(?:ing)?\s+myself|harm(?:ing)?\s+myself|(?:die|dying)(?!\s+(?:my\s+hair|laughing))|jump(?:ing)?\s+(?:off|from|over)\s+(?:(?:a|the|this)\s+)?(?:(?:tall|high|nearby)\s+)?(?:building|roof|bridge|balcony|ledge)|overdos(?:e|ing)|cut(?:ting)?\s+myself|(?:swallow|drink|take|eat|swallowing|drinking|taking|eating)\s+(?:some\s+|rat\s+)?poison|kill\s+(?:someone|somebody|him|her|them|people)|kill(?=\s*$))\b"
     intent = r"\bi\s+(?:(?:am|'m)\s+)?(?:want\s+to|wanna|am\s+going\s+to|going\s+to|am\s+about\s+to|about\s+to|will|plan\s+to|intend\s+to|might|need\s+to|gonna|have\s+a\s+plan\s+to|planning\s+to|thinking\s+(?:of|about)|keep\s+thinking\s+about)\s+"
     intent = intent.replace(r"\bi\s+", r"\bi(?:'m)?\s+")
     negative = r"\b(?:do\s+not|don't|dont|not|never|wouldn't|would\s+not)\s+(?:(?:want|plan|intend|going|about)\s+(?:to\s+)?)?"
@@ -61,6 +61,10 @@ def support_signal(text):
             return "explicit_safety_language"
         if re.search(r"\bi(?:'ve| have)\s+(?:just\s+)?taken\s+(?:an\s+)?overdose\b", scoped):
             return "explicit_safety_language"
+        if re.search(r"\bi(?:'ve| have)\s+(?:just\s+)?(?:swallowed|drunk|taken|eaten)\s+(?:some\s+|rat\s+)?poison\b", scoped):
+            return "immediate_safety_language"
+        if re.search(r"\bi(?:'m| am)\s+(?:swallowing|drinking|taking|eating)\s+(?:some\s+|rat\s+)?poison\b", scoped):
+            return "immediate_safety_language"
         if re.search(r"\bi(?:'m| am)\s+(?:suicidal|on (?:the|a) (?:roof|ledge)).{0,65}\b(?:jump|die|suicidal)\b", scoped):
             return "immediate_safety_language"
         if re.search(r"\bi(?:'m| am)\s+suicidal\b", scoped):

@@ -17,7 +17,7 @@ const enwenRouteTitles = new Map([
   ["chat", "Let's talk"],
   ["trusted-contact", "Trusted contact"],
   ["resources", "Wellness resources"],
-  ["resource-admin", "Resource desk"],
+  ["resource-admin", "Library studio"],
   ["pause", "A mindful minute"],
 ]);
 

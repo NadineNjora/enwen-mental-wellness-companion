@@ -18,6 +18,7 @@ let saving = false;
 let loading = false;
 let completed = false;
 let currentStep = 1;
+let signupInvitationNotice = null;
 
 function showStep(step, { focus = true } = {}) {
   currentStep = step;
@@ -172,6 +173,15 @@ async function loadNotices() {
       wellness: wellness.data,
       contact: contact.data,
     };
+    signupInvitationNotice=null;
+    const invitationCheck=byId('signup-invitation-ack');
+    if(invitationCheck){
+      invitationCheck.checked=false;
+      try{
+        const extra=await requestJSON('/auth/signup-invitation-notice');
+        if(extra.data?.notice_version&&extra.data?.text){signupInvitationNotice=extra.data;byId('signup-invitation-choice').hidden=false;byId('signup-invitation-notice').textContent=extra.data.text;invitationCheck.disabled=!extra.data.ready;byId('signup-invitation-availability').textContent=extra.data.ready?'':'Sending invitations at signup is not available yet. You can still create your account and review your contact later.';}
+      }catch{byId('signup-invitation-choice').hidden=true;}
+    }
 
     byId("registration-consent-text").textContent = wellness.data.text;
     byId("registration-consent-version").textContent =
@@ -240,6 +250,8 @@ form.addEventListener("submit", async (event) => {
     },
     contact_consent_accepted: contactCheck.checked,
     contact_consent_version: notices.contact.version,
+    invite_contact_by_email: Boolean(signupInvitationNotice?.ready&&byId('signup-invitation-ack')?.checked),
+    invitation_notice_version: signupInvitationNotice?.notice_version||null,
   };
 
   saving = true;
@@ -285,7 +297,11 @@ form.addEventListener("submit", async (event) => {
     }
 
     showMessage(
-      "Account created. Your trusted contact is pending confirmation; no email was sent. You can now log in."
+      data.contact_invitation_status==='provider_accepted'
+        ? 'Account created. Your invitation has been submitted by email. Your person can accept or decline.'
+        : data.contact_invitation_status==='uncertain'
+          ? 'Account created. The email send could not be confirmed. Log in and refresh Trusted contact before retrying.'
+          : 'Account created. You can log in and review your trusted contact. No invitation email was sent.'
     );
 
     loginLink.focus();

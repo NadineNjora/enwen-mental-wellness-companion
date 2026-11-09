@@ -407,9 +407,8 @@ function renderMoodHistoryList() {
   for (const entry of historyEntries.slice(historyOffset, historyOffset + 20)) {
     const item = document.createElement("li"), heading = document.createElement("strong");
     const timestamp = document.createElement("time"), note = document.createElement("p");
-    const scale = entry.scale_max, names = scale === 5 ? legacyMoodNames : moodNames;
-    heading.textContent = (names[entry.mood_score] || "Mood") + " · " + entry.mood_score + "/" + scale
-      + (scale === 5 ? " · Earlier 1–5 scale" : "");
+    const displayScore = Math.round(entry.mood_score * 10 / entry.scale_max * 10) / 10;
+    heading.textContent = (moodNames[Math.round(displayScore)] || "Mood") + " · " + displayScore + "/10";
     const date = new Date(entry.created_at); timestamp.dateTime = entry.created_at;
     timestamp.textContent = Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString(undefined,
       {dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Nairobi"});
@@ -426,7 +425,7 @@ function renderMoodHistoryList() {
   historyNext.disabled = historyOffset + 20 >= historyEntries.length;
   historyMessage.textContent = historyEntries.length
     ? "Showing " + (historyOffset + 1) + "–" + Math.min(historyOffset + 20, historyEntries.length)
-      + " of " + historyEntries.length + " check-ins. The charts include your complete saved history."
+      + " of " + historyEntries.length + " check-ins. The graph includes your complete saved history."
     : "No check-ins yet. Your first saved mood will appear here.";
 }
 async function loadMoodHistory() {

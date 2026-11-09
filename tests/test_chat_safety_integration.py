@@ -68,6 +68,9 @@ with engine.connect() as connection:
             def payload(content,conversation=None,request=None,ack=True):
                 return {"messages":[{"role":"user","content":content}],"external_ai_consent":ack,
                         "notice_version":notice["notice_version"],"request_id":str(request or uuid4()),"conversation_id":conversation}
+            screened=client.post('/chat/screen',json={'message':'I want to swallow poison'})
+            check('fast safety screen needs no model or notification',screened.status_code==200 and screened.json()['urgent'] and normal.call_count==0 and not captured)
+            check('ordinary text is not a safety preflight',client.post('/chat/screen',json={'message':'I need a quiet study break'}).json()['urgent'] is False)
             urgent=payload("For this fictional test, I want to jump off a building")
             with patch.object(ai_chat,"connection_configured",return_value=False),patch.object(ai_chat,"limit_user",side_effect=AssertionError("must not rate-limit support")):
                 response=client.post("/chat",json=urgent)

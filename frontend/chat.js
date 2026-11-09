@@ -92,7 +92,7 @@
       requestTimeout = notice.local === true ? 150000 : 35000;
       el("chat-notice").textContent = notice.notice_text;
       el("chat-consent-label").textContent = notice.consent_label;
-      status(notice.configured ? (notice.local ? "Local Llama is ready. Read the notice before ordinary AI replies." : "Ready when you are. Read the processing notice.")
+      status(notice.configured ? (notice.local ? "Nia is ready when you are." : "Ready when you are. Read the processing notice.")
         : "AI replies are not connected yet. Human-support options remain available.");
       controls();
       await loadHistory();
@@ -121,8 +121,8 @@
   }
   function bubble(role, content, state, safety) {
     const row = document.createElement("li"), name = document.createElement("strong"), body = document.createElement("p");
-    name.textContent = role === "user" ? "You" : safety?.level === "urgent" ? "ENWEN · Human support" : "ENWEN · AI";
-    body.textContent = content; row.className = "chat-bubble " + role; row.append(name, body);
+    name.textContent = role === "user" ? "You" : safety?.level === "urgent" ? "ENWEN · Human support" : "Nia 🌼";
+    body.textContent = safety?.level === 'urgent' ? 'Let’s bring in human support. Your options are below.' : content; row.className = "chat-bubble " + role; row.append(name, body);
     if (role === "user" && (state === "pending" || state === "failed")) {
       const note = document.createElement("small");
       note.className = "chat-turn-state";
@@ -300,8 +300,23 @@
     let id;
     try { id = requestId(text); } catch(error) { status(error.message, true); return; }
     const acknowledged = agree.checked === true, job = begin("send", requestTimeout);
-    sending = true; controls(); status("Making room for your thoughts...");
+    sending = true; controls(); status("Nia is finding a little room for your thoughts…");
     try {
+      // Show support before waiting for persistence or email transport.
+      // The chat endpoint repeats the same server-side screen authoritatively.
+      try {
+        const screening = await request("/chat/screen", job, {method:"POST", body:{message:text}});
+        if (!job.current()) return;
+        if (screening?.urgent && screening.support?.level === "urgent") {
+          conversationPaused = true;
+          window.enwenSafety?.show(screening.support);
+          status("Let’s bring in human support. Checking your contact request…");
+        }
+      } catch (screenError) {
+        if (!job.current()) return;
+        // /chat also screens before any model call; never substitute an AI reply here.
+        if (screenError.status === 401) return;
+      }
       const data = await request("/chat", job, {method:"POST", body:{messages:[{role:"user",content:text}], request_id:id,
         conversation_id:conversationId, external_ai_consent:acknowledged, notice_version:noticeVersion}});
       if (!data || !job.current()) return;

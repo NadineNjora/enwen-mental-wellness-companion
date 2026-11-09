@@ -14,12 +14,12 @@ from community_models import CommunityModerator as Moderator,CommunityPost as Po
 from safety_screen import support_signal
 
 router=APIRouter(prefix='/community',tags=['Peer reflections'])
-VERSION='community-sharing-1'
-NOTICE=('I choose to share this text with signed-in ENWEN users after human moderation. My account name and email are not displayed, but ENWEN retains my account identity internally for ownership and moderation; this is pseudonymous, not completely anonymous. '
- 'I will leave out names, contact details, web links and information that identifies other people. Submitted posts and feedback can be read by community moderators. I can withdraw my sharing from the feed; the submission and review record remain in my account and moderation history. '
- 'This does not share my private journal, moods or chats. Community feedback is peer encouragement, not counselling or medical advice. Screening may miss or over-flag content. This community is not continuously monitored or an emergency service; no trusted-contact email or SMS is sent from community submissions.')
-REVIEW_VERSION='community-review-1'
-REVIEW_NOTICE='Check for identifying details, harassment, unsafe instructions, medical advice and distress. Approve only suitable peer reflection or encouragement. Flagged submissions cannot be published; decline them with the relevant reason. This is community content review, not clinical assessment or emergency dispatch.'
+VERSION='community-sharing-2'
+NOTICE=('I choose to share this reflection or response with signed-in students after moderation. My name and email stay hidden from peers; ENWEN keeps ownership and review records. '
+ 'I will leave out identifying details. I can withdraw my sharing; review records remain. My private journal is not shared. This is peer encouragement, not counselling. Sharing does not alert your contact; seek human support for urgent help.')
+REVIEW_VERSION='community-review-2'
+REVIEW_NOTICE='Help keep the garden kind. Check for identifying details, harassment, unsafe advice and distress before approving. Hold flagged content for support; another moderator reviews your own sharing.'
+FLOWERS=('Lily','Peony','Rose','Iris','Jasmine','Daisy','Hibiscus','Orchid','Marigold','Sunflower','Lotus','Violet')
 REASONS={'privacy','unsafe','harassment','needs_support','community_fit','other'}
 
 def fail(code,message):raise HTTPException(code,message,headers={'Cache-Control':'no-store'})
@@ -38,7 +38,7 @@ def flags(value):return bool(support_signal(value)),privacy_signal(value)
 def model(kind):return Post if kind=='post' else Feedback
 def identifier(row):return row.post_id if isinstance(row,Post) else row.feedback_id
 def public(row,user):
-    value={'id':str(identifier(row)),'content':row.content,'published_at':row.published_at,'is_mine':row.author_id==user.user_id,'author_label':'A fellow student 🌱'}
+    value={'id':str(identifier(row)),'content':row.content,'published_at':row.published_at,'is_mine':row.author_id==user.user_id,'author_label':'A petal from '+FLOWERS[identifier(row).int % len(FLOWERS)]+' 🌸'}
     if isinstance(row,Post):value['title']=row.title
     return value
 def own(row):
@@ -115,12 +115,12 @@ def mine(response:Response,limit:int=Query(20,ge=1,le=50),offset:int=Query(0,ge=
         return {'posts':[own(row) for row in posts],'feedback':[own(row) for row in feedback]}
 
 @router.get('/posts/{post_id}')
-def read_post(post_id:UUID,response:Response,offset:int=Query(0,ge=0,le=10000),user:AccountResponse=Depends(member)):
+def read_post(post_id:UUID,response:Response,offset:int=Query(0,ge=0,le=10000),limit:int=Query(20,ge=1,le=50),user:AccountResponse=Depends(member)):
     response.headers['Cache-Control']='no-store'
     with Session(engine) as db:
         post=db.get(Post,post_id)
         if not post or post.status!='published':fail(404,'This shared reflection is unavailable.')
-        rows=db.scalars(select(Feedback).where(Feedback.post_id==post_id,Feedback.status=='published').order_by(Feedback.published_at,Feedback.feedback_id).offset(offset).limit(20)).all()
+        rows=db.scalars(select(Feedback).where(Feedback.post_id==post_id,Feedback.status=='published').order_by(Feedback.published_at,Feedback.feedback_id).offset(offset).limit(limit)).all()
         return {'post':public(post,user),'feedback':[public(row,user) for row in rows]}
 
 @router.post('/posts/{post_id}/feedback',status_code=201)

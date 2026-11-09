@@ -14,6 +14,7 @@ urgent=["I want to jump off a building", "I am about to jump off the roof", "i w
         "I'm thinking of ending my life", "I have a plan to kill myself", "I am planning to hurt myself",
         "I keep thinking about killing myself", "I am considering suicide", "I have thoughts of suicide",
         "I've just taken an overdose", "I have taken an overdose", "I'm suicidial"]
+urgent += ["I want to swallow poison", "I want to take rat poison", "I want to drink poison", "I feel like I don't want to live anymore", "I want to jump over a building", "I want to kill", "I want to kill someone", "I've swallowed poison", "I am taking rat poison"]
 ordinary=["I'm stressed about exams", "I want to finish my building project", "I do not want to jump off a building",
           "I don't want to kill myself", "I am not suicidal", "My essay discusses suicide prevention",
           "A film character wanted to jump off a building", "I want to jump into my new coursework",
@@ -23,6 +24,7 @@ ordinary=["I'm stressed about exams", "I want to finish my building project", "I
           "I wish I were dead tired after a workout", "I am planning to finish my assignments",
           "I have not taken an overdose", "I want to help my friend get support"]
 # Near-miss phrases are deliberately tested rather than described as clinical coverage.
+ordinary += ["I have not taken rat poison", "I am not drinking poison", "I want to kill time before class"]
 for text in urgent: assert support_signal(text), repr(text)
 for text in ordinary: assert not support_signal(text), repr(text)
 assert is_demonstration(urgent[13])
