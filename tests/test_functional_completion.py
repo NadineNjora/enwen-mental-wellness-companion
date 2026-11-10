@@ -78,16 +78,16 @@ with engine.connect() as connection:
             check('email includes minimal check-in without private note','SYNTHETIC_PRIVATE_NOTE' not in transport.call_args.args[2] and 'Synthetic Student' in transport.call_args.args[2])
             check('provider acceptance is not human response','not confirmed' in sent['alert']['message'])
             check('request replay does not resend',alerts.create_live_alert(uid,request)==sent and transport.call_count==1)
-            check('cooldown prevents alert spam',alert_status(alerts.create_live_alert(uid,uuid4()))=='blocked_cooldown' and transport.call_count==1)
+            check('separate eligible event has no artificial waiting period',alert_status(alerts.create_live_alert(uid,uuid4()))=='provider_accepted' and transport.call_count==2)
             check('owner can inspect recorded event',client.get('/safety/alerts/'+sent['event_id']).status_code==200)
             from types import SimpleNamespace
             with session(connection) as db:check('permission cannot transfer to a different enrollment',not alerts.agreed(db,uid,'live_email_alert',alerts.VERSION,SimpleNamespace(invitation_id=uuid4())))
             with patch.object(ai_chat,'generate_reply') as normal:
                 flagged=client.post('/chat',json={'messages':[{'role':'user','content':'I want to jump off a building'}],'request_id':str(uuid4()),'external_ai_consent':True,'notice_version':ai_chat.notice_version()})
-                check('chat screen dispatches through live policy and cooldown',flagged.status_code==200 and flagged.json()['safety']['alert']['status']=='blocked_cooldown' and not normal.called)
+                check('chat screen dispatches immediately through live permission policy',flagged.status_code==200 and flagged.json()['safety']['alert']['status']=='provider_accepted' and transport.call_count==3 and not normal.called)
                 check('chat never claims confirmed real alert delivery',flagged.json()['alerts_sent'] is False)
             check('student can withdraw permission',client.post(path,json={'accepted':False,'notice_version':alerts.VERSION}).status_code==200)
-            check('withdrawal prevents further sends',alert_status(alerts.create_live_alert(uid,uuid4()))=='blocked_consent' and transport.call_count==1)
+            check('withdrawal prevents further sends',alert_status(alerts.create_live_alert(uid,uuid4()))=='blocked_consent' and transport.call_count==3)
             with session(connection) as db:
                 old=db.get(Enrollment,eid);old.revoked_at=db.scalar(select(func.clock_timestamp()));db.commit()
             check('revoked recipient cannot be enabled',client.post(path,json=permission).status_code==409)

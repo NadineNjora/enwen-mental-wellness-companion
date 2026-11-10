@@ -54,7 +54,7 @@ with engine.connect() as connection:
             check('student permission remains required',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_consent' and not alert_mail.called)
             check('student permission can be recorded',client.post(base+'/alert-permission',json={'accepted':True,'notice_version':alerts.VERSION}).status_code==200)
             ready=client.get(base+'/alert-permission').json()
-            check('permission page reports the actual one-email readiness',ready['sending_available'] and ready['delivery_mode']=='local_demo' and 'one-email' in ready['sending_reason'])
+            check('permission page reports current presentation readiness',ready['sending_available'] and ready['delivery_mode']=='local_demo')
             with patch.dict(contacts.os.environ,{'LOCAL_DEMO_NOTIFICATIONS':'false'}):check('demo authorisation switch enforced',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_demo' and not alert_mail.called)
             with patch.object(ai_chat,'generate_reply') as normal:
                 request_id=str(uuid4());response=client.post('/chat',json={'messages':[{'role':'user','content':'Fictional demonstration: I want to jump off a building'}],'request_id':request_id,'external_ai_consent':True,'notice_version':ai_chat.notice_version()})
@@ -62,14 +62,21 @@ with engine.connect() as connection:
             args=alert_mail.call_args
             check('demo transport only targets verified mailbox',args.args[0]=='sender@university-mail.dev')
             check('synthetic subject and no private words',args.kwargs['subject']=='ENWEN DEMO: automatic check-in test' and 'NO REAL EMERGENCY' in args.args[2] and 'jump' not in args.args[2])
-            with session(connection) as db:
-                row=db.scalar(select(alerts.LiveEmailAlert).where(alerts.LiveEmailAlert.status=='provider_accepted'));row.created_at-=timedelta(days=1);db.commit()
-            check('one demo allowance persists beyond cooldown',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_cooldown' and alert_mail.call_count==1)
+            extra_id=uuid4();extra=alerts.create_live_alert(uid,extra_id,True)
+            check('new presentation event sends immediately without a lifetime quota',extra['alert']['status']=='provider_accepted' and alert_mail.call_count==2)
+            check('same request remains duplicate-safe',alerts.create_live_alert(uid,extra_id,True)==extra and alert_mail.call_count==2)
+            for n in range(6):
+                check('separate immediate presentation request '+str(n+1),alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='provider_accepted')
             state=client.get(base+'/alert-permission').json()
-            check('permission stays on without falsely promising another send',state['accepted'] and not state['sending_available'] and 'already been used' in state['sending_reason'])
-            check('last attempt carries honest reason and timestamp',state['last_alert']['status']=='blocked_cooldown' and 'No new email was sent' in state['last_alert']['message'] and bool(state['last_alert']['created_at']))
+            check('readiness remains true after repeated immediate sends',state['accepted'] and state['sending_available'] and 'no ENWEN test quota' in state['sending_reason'])
+            check('latest attempt carries a truthful status and timestamp',state['last_alert']['status']=='provider_accepted' and bool(state['last_alert']['created_at']))
             with patch.dict(contacts.os.environ,{'LOCAL_DEMO_USER_EMAIL':'another@example.com'}):
-                check('other account capability does not promise check-in delivery',not client.get(base+'/alert-permission').json()['sending_available'])
+                calls=alert_mail.call_count
+                check('other account capability remains restricted',not client.get(base+'/alert-permission').json()['sending_available'])
+                check('removing quota never widens recipient or account access',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_demo' and alert_mail.call_count==calls)
+            client.post(base+'/alert-permission',json={'accepted':False,'notice_version':alerts.VERSION})
+            calls=alert_mail.call_count
+            check('withdrawn permission still prevents further sends',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_consent' and alert_mail.call_count==calls)
     finally:app.dependency_overrides.clear();outer.rollback()
     check('existing public records preserved',before=={n:connection.scalar(text('SELECT count(*) FROM public.'+n)) for n in names})
 print(f'Passed {len(checks)} local email demonstration checks; fake transport only.')

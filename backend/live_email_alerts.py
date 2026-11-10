@@ -1,6 +1,6 @@
 """Minimal real-email check-ins, only with both parties' current permission."""
 import os
-from datetime import datetime,timedelta
+from datetime import datetime
 from uuid import UUID,uuid4
 from fastapi import APIRouter,Depends,Response
 from pydantic import BaseModel,ConfigDict,StrictBool,Field
@@ -48,20 +48,13 @@ MESSAGES={'disabled':'Live check-in emails are disabled. No real notification wa
  'blocked_demo':'This is marked as a fictional demonstration. No real person was notified.',
  'blocked_consent':'Current live-email permission is missing or withdrawn. No real notification was sent.',
  'blocked_unconfirmed':'No currently accepted real contact agreement is available. No real notification was sent.',
- 'blocked_cooldown':'A recent check-in request is already recorded. No duplicate email was sent.',
+ 'blocked_cooldown':'This earlier request was blocked by a sending limit. No email was sent for that request.',
  'provider_accepted':'A check-in email has been submitted for your trusted person. Please reach out directly too; delivery and a response are not confirmed.',
  'uncertain':'Email acceptance is not confirmed. No automatic retry occurred; contact someone directly instead of waiting.'}
 def result(row):
     status='uncertain' if row.status=='dispatching' else row.status
     message=MESSAGES[status]
-    if status=='blocked_cooldown' and local_demo():
-        message='The authorised one-email presentation test has already been used. No new email was sent. Wider sending requires public deployment and a separate delivery setup.'
     return {'event_id':str(row.event_id),'alert':{'status':status,'message':message,'requested_at':row.created_at.isoformat()}}
-
-def recent_alert(db,user_id,current_time):
-    return db.scalar(select(LiveEmailAlert.event_id).where(LiveEmailAlert.user_id==user_id,
-        LiveEmailAlert.status.in_(('dispatching','provider_accepted','uncertain')),
-        *(() if local_demo() else (LiveEmailAlert.created_at>current_time-timedelta(minutes=10),))).limit(1))
 
 def delivery_state(db,user,enrollment,accepted):
     """Describe the same gates used by dispatch; permission alone is not readiness."""
@@ -74,9 +67,7 @@ def delivery_state(db,user,enrollment,accepted):
     if os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()!='true':return False,'Check-in email sending is not enabled on this installation.'
     if not enrollment:return False,'Your trusted person needs to accept their email invitation first.'
     if not accepted or not user.wellness_consent_current:return False,'Check-in email permission is needed before sending.'
-    if recent_alert(db,user.user_id,db.scalar(select(func.clock_timestamp()))):
-        return False,('The one-email presentation test has already been used. No further check-in emails will be sent in this mode.' if local_demo() else 'A check-in email was recently requested. New alerts are paused for ten minutes to avoid duplicates.')
-    return True,('Ready for the approved one-email presentation test to your verified mailbox.' if local_demo() else 'Ready to request a check-in from your accepted trusted person.')
+    return True,('Presentation emails are ready for your verified mailbox. New requests have no ENWEN test quota or timed waiting period; repeating the same request sends only once.' if local_demo() else 'Ready to request a check-in from your accepted trusted person.')
 def latest(db,user_id,kind):
     if kind=='live_email_alert':return db.scalar(select(LiveEmailPermission).where(LiveEmailPermission.user_id==user_id).order_by(LiveEmailPermission.recorded_at.desc(),LiveEmailPermission.permission_id.desc()).limit(1))
     return db.scalar(select(Consent).where(Consent.user_id==user_id,Consent.consent_type==kind).order_by(Consent.recorded_at.desc(),Consent.consent_id.desc()).limit(1))
@@ -125,7 +116,6 @@ def create_live_alert(user_id,request_id,demonstration=False):
         elif os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true':
             if not agreed(db,user_id,'wellness_use',CONSENT_VERSION) or not agreed(db,user_id,'live_email_alert',VERSION,enrollment):status='blocked_consent'
             elif not enrollment:status='blocked_unconfirmed'
-            elif recent_alert(db,user_id,now):status='blocked_cooldown'
             else:
                 try:_,sender=configuration()
                 except (ValueError,TypeError):status='disabled'
