@@ -48,6 +48,12 @@ class CommunityReport(Base):
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.clock_timestamp())
     resolved_at:Mapped[datetime|None]=mapped_column(DateTime(timezone=True))
 
+class CommunityReplyRead(Base):
+    """Only a reflection's owner can acknowledge its published replies."""
+    __tablename__='community_reply_reads'
+    feedback_id:Mapped[UUID]=mapped_column(ForeignKey('community_feedback.feedback_id'),primary_key=True)
+    read_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.clock_timestamp())
+
 class CommunityReview(Base):
     __tablename__='community_reviews'
     review_id:Mapped[UUID]=mapped_column(primary_key=True,default=uuid4)

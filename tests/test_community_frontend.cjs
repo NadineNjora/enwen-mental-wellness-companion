@@ -17,8 +17,8 @@ function fixture(){
  }
  for(const m of html.matchAll(/<([a-z][\w-]*)[^>]*\bid="([^"]+)"/g)){if(m[2].startsWith('community-')||m[2]==='page-community'){const n=new Element(m[1]);n.id=m[2];nodes[n.id]=n;}}
  nodes['page-community'].children=Object.values(nodes).filter(n=>n.id!=='page-community');
- const baseline=(url,options)=>url.endsWith('/notice')?reply(notice):url.includes('/feed?')?reply([post]):url.includes('/mine?')?reply({posts:[],feedback:[]}):url.includes('/moderation/queue')?reply({items:[],text:'Review before publication.',notice_version:notice.review_version}):reply({post,feedback:[]});responder=baseline;
- const context=vm.createContext({document:{getElementById:id=>nodes[id],createElement:tag=>new Element(tag)},window:{crypto:{randomUUID:()=>`synthetic-request-${++sequence}`},confirm:()=>true,addEventListener:(name,fn)=>events[name]=fn},location:{hash:'#/community'},accessToken:'synthetic-token',AbortController,setTimeout,clearTimeout,TypeError,
+ const baseline=(url,options)=>url.endsWith('/notice')?reply(notice):url.endsWith('/activity')?reply({unread_count:0,items:[]}):url.includes('/feed?')?reply([post]):url.includes('/mine?')?reply({posts:[],feedback:[]}):url.includes('/moderation/queue')?reply({items:[],text:'Review before publication.',notice_version:notice.review_version}):reply({post,feedback:[]});responder=baseline;
+ const context=vm.createContext({document:{getElementById:id=>nodes[id],createElement:tag=>new Element(tag)},window:{crypto:{randomUUID:()=>`synthetic-request-${++sequence}`},confirm:()=>true,addEventListener:(name,fn)=>events[name]=fn,setInterval:fn=>{events.poll=fn;return 1;},clearInterval:()=>{delete events.poll;}},location:{hash:'#/community'},accessToken:'synthetic-token',AbortController,setTimeout,clearTimeout,TypeError,
   fetch:(url,options)=>{calls.push({url,options});return responder(url,options);},endSession(){context.accessToken=null;context.window.enwenCommunity.reset();}});
  vm.runInContext(script,context);return {nodes,calls,events,context,ui:context.window.enwenCommunity,baseline,respond:fn=>responder=fn,buttons:()=>walk(nodes['page-community']).filter(n=>n.tag==='button'),async setup(){await this.ui.setup({wellness_consent_current:true});await flush();}};
 }
@@ -61,5 +61,21 @@ const checks=[],check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
  await f.nodes['community-feed-prev'].fire('click');check('Newer returns to the first page',f.calls.at(-1).url.includes('offset=0')&&f.nodes['community-feed'].children.length===12);
  f=fixture();f.respond((url,options)=>url.includes('/feed?')?reply(Array.from({length:12},()=>post)):f.baseline(url,options));await f.setup();
  check('an exact full last page has no phantom Older page',f.nodes['community-feed-next'].disabled&&f.nodes['community-feed-next'].hidden);
+ f=fixture();let published=false;f.respond((url,options)=>url.includes('/feed?')?reply(published?[post]:[]):f.baseline(url,options));await f.setup();published=true;f.events.poll();await flush();
+ check('published reflections arrive on the visible feed without manual refresh',f.nodes['community-feed'].children.length===1);
+ const working=f.baseline;f.respond((url,options)=>url.includes('/feed?')?reply({detail:'Connection lost'},503):working(url,options));await f.ui.load();check('manual refresh failure reports the connection problem',f.nodes['community-status'].textContent==='Connection lost');
+ f.respond(working);f.events.poll();await flush();check('background reconnection restores the view and clears its error',f.nodes['community-feed'].children.length===1&&f.nodes['community-status'].textContent==='');
+ await f.nodes['community-write-tab'].fire('click');f.nodes['community-post-content'].value='My ongoing draft';f.events.poll();await flush();check('background updates leave a writing draft intact',f.nodes['community-post-content'].value==='My ongoing draft');
+ f.ui.reset();check('logout cancels polling and clears new-petal notices',!f.events.poll&&f.nodes['community-activity'].hidden&&f.nodes['community-activity-list'].children.length===0);
+ f=fixture();let seen=false;const note={id:'reply-1',post_id:post.id,post_title:post.title,author_label:'A petal from Daisy 🌸',offset:20};
+ f.respond((url,options)=>url.endsWith('/activity')?reply({unread_count:seen?0:1,items:seen?[]:[note]}):url.endsWith('/read')?(seen=true,reply({recorded:true})):url.includes('/posts/')?reply({post:{...post,is_mine:true},feedback:[{...post,id:'reply-1'}]}):f.baseline(url,options));await f.setup();
+ check('author sees a flower-labelled new-reply notice',!f.nodes['community-activity'].hidden&&walk(f.nodes['community-activity-list']).some(n=>n.textContent.includes('Daisy')));
+ await f.buttons().find(b=>b.textContent==='Read this petal →').fire('click');check('petal opens the correct reply page and records only displayed replies',f.calls.some(c=>c.url.includes('/posts/'+post.id+'?limit=21&offset=20'))&&f.calls.some(c=>c.url.endsWith('/read')&&JSON.parse(c.options.body).feedback_ids[0]==='reply-1'));
+ check('read petal disappears after persisted acknowledgement',f.nodes['community-activity'].hidden);
+ f=fixture();const pendingRow={kind:'post',id:'ordinary',title:'A rest',content:'Synthetic text',status:'pending',support_required:false,privacy_flag:false,reports:[],revision:1};let extra=false;
+ f.respond((url,options)=>url.endsWith('/notice')?reply({...notice,is_moderator:true}):url.includes('/moderation/queue')?reply({notice_version:notice.review_version,text:notice.review_text,own_pending:2,items:extra?[pendingRow,{...pendingRow,id:'new'}]:[pendingRow]}):f.baseline(url,options));await f.setup();await f.nodes['community-review-tab'].fire('click');
+ const retainedAck=walk(f.nodes['community-queue']).find(n=>n.tag==='input');retainedAck.checked=true;await retainedAck.fire('change');extra=true;f.events.poll();await flush();
+ check('incoming queue item preserves an unchanged review checklist',f.nodes['community-queue'].children.length===2&&walk(f.nodes['community-queue']).includes(retainedAck)&&retainedAck.checked);
+ check('own submissions explain why a different moderator is needed',f.nodes['community-review-count'].textContent.includes('2 of your own'));
  console.log(`Passed ${checks.length} community UI checks; synthetic browser/API only.`);for(const name of checks)console.log('PASS:',name);
 })().catch(e=>{console.error(e);process.exitCode=1;});

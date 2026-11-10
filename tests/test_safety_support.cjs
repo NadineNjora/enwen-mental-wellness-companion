@@ -91,6 +91,11 @@ env.api.show({...urgent, alert: {status: "unexpected"}});
 assert.ok(texts(env.panel).includes("Delivery is not confirmed"));
 assert.ok(!texts(env.panel).includes("Delivery confirmed."));
 checks.push("unknown alert outcome never claims that help was notified");
+env.api.show({...urgent,alert:{status:'provider_accepted',requested_at:'2026-11-08T14:36:00+03:00'}});
+assert.match(texts(env.panel),/Reopening it does not send another email/);
+assert.match(texts(env.panel),/Request recorded/);
+assert.doesNotMatch(texts(env.panel),/on its way|Delivery confirmed/);
+checks.push('saved provider receipt has a request date and never promises a new send');
 
 env.api.reset();
 assert.equal(env.api.active(), false);

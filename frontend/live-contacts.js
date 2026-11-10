@@ -4,6 +4,19 @@
   const form=by("form"),fields=by("fields"),message=by("message"),details=by("details"),revoke=by("revoke");
   let generation=0,busy=false,notice=null,record=null,attempt=null,alertNotice=null;
   const jobs=new Set();
+  function dated(value){const date=new Date(value);return value&&Number.isFinite(date.getTime())?date.toLocaleString('en-KE',{timeZone:'Africa/Nairobi',dateStyle:'medium',timeStyle:'short'}):'date unavailable';}
+  function permissionStatus(){
+    if(!alertNotice)return '';
+    let value=(alertNotice.accepted?'Check-in email permission is on.':'Check-in email permission is off.')+' '+(alertNotice.sending_reason||(!alertNotice.delivery_enabled?'Sending is not available yet.':''));
+    if(alertNotice.last_alert){const last=alertNotice.last_alert,labels={provider_accepted:'Submitted to Brevo; delivery is not confirmed here.',blocked_cooldown:'No additional email sent.',blocked_demo:'No email sent from this demonstration.',blocked_consent:'No email sent; permission is needed.',blocked_unconfirmed:'No email sent; contact acceptance is needed.',disabled:'No email sent; sending is unavailable.',uncertain:'The send could not be confirmed.'};value+=' Last attempt ('+dated(last.created_at)+'): '+(labels[last.status]||'Outcome unconfirmed.');}
+    return value;
+  }
+  function invitationDetails(value){
+    if(!value)return 'Choose someone you trust and send an invitation below. Invitations go to their email, not your login email.';
+    const state=value.status==='accepted'?'Invitation accepted':value.status==='pending'?'Waiting for their reply':value.status;
+    const delivery=value.delivery_status==='provider_accepted'?'Brevo accepted this email; inbox delivery is not confirmed here.':value.delivery_status==='uncertain'?'The email send could not be confirmed.':'No email send is confirmed.';
+    return `${value.full_name} · ${value.email} · ${state}. Invitation requested ${dated(value.created_at)}. ${delivery}`;
+  }
   function reset(){generation++;for(const c of jobs)c.abort();jobs.clear();busy=false;notice=record=attempt=alertNotice=null;form.reset();fields.disabled=true;details.textContent="";message.textContent="";revoke.hidden=true;by("notice").textContent="";by('alert-notice').textContent='';by('alert-status').textContent='';by('alert-ack').checked=false;by('alert-allow').disabled=by('alert-off').disabled=true;}
   async function request(path,options={}){
     const session=generation,token=accessToken,c=new AbortController();jobs.add(c);const timer=setTimeout(()=>c.abort(),25000);
@@ -22,10 +35,10 @@
     if(!accessToken||busy)return;const session=generation;busy=true;controls();
     try{
       const [n,r,a]=await Promise.all([request("/capability"),request(""),request('/alert-permission')]);if(session!==generation)return;
-      alertNotice=a;by('alert-notice').textContent=a.short_text||a.text;by('alert-ack').checked=false;by('alert-status').textContent=(a.accepted?'Check-in email permission is on.':'Check-in email permission is off.')+(!a.delivery_enabled?' Sending is not available yet.':'');
+      alertNotice=a;by('alert-notice').textContent=a.short_text||a.text;by('alert-ack').checked=false;by('alert-status').textContent=permissionStatus();
       notice=n;record=r;by("notice").textContent=n.short_text||n.text;
-      message.textContent=n.ready?'':n.reason;
-      details.textContent=r?`${r.full_name} · ${r.email} · ${r.status==='accepted'?'Invitation accepted':r.status==='pending'?'Waiting for their reply':r.status}`:"Choose someone you trust and send an invitation below.";
+      message.textContent=!n.ready||n.delivery_mode==='local_demo'?n.reason:'';
+      details.textContent=invitationDetails(r);
       const home=document.getElementById('contact-home-status');if(home)home.textContent=r?`${r.full_name} · ${r.status==='accepted'?'In your corner':r.status==='pending'?'Invitation awaiting a reply':r.status}`:'Invite someone to be in your corner.';
       if(!by('name').value&&!by('email').value){
         if(r){by('name').value=r.full_name;by('email').value=r.email;}
@@ -53,8 +66,8 @@
     try{
       const result=await request("",{method:"POST",body:{...attempt,notice_version:notice.notice_version,acknowledged:true}});
       if(session!==generation)return;
-      record=result;message.textContent=result.delivery_status==="provider_accepted"?"Your invitation has been submitted by email. Your person can choose Accept or Decline.":"We couldn’t confirm the send. Refresh the status before trying again.";
-      details.textContent=`${result.full_name} · ${result.email} · Waiting for their reply`;
+      record=result;message.textContent=result.delivery_status==="provider_accepted"?"Your invitation was submitted by email to "+result.email+". This receipt does not confirm inbox delivery. Check that mailbox, including spam or junk.":"We couldn’t confirm the send. Refresh the status before trying again.";
+      details.textContent=invitationDetails(result);
       revoke.hidden=false;by("ack").checked=false;
     }catch(e){if(session===generation)message.textContent=e.status?e.message:"Outcome unconfirmed. Your form and request identifier are kept. Refresh status before retrying; nothing was automatically resent.";}
     finally{if(session===generation){busy=false;controls();}}
@@ -70,7 +83,7 @@
   by('alert-ack').addEventListener('change',controls);
   async function permission(accepted){
     if(busy||!alertNotice||(accepted&&!by('alert-ack').checked))return;const session=generation;busy=true;controls();
-    try{const result=await request('/alert-permission',{method:'POST',body:{accepted,notice_version:alertNotice.notice_version}});if(session===generation){alertNotice.accepted=result.accepted;by('alert-ack').checked=false;by('alert-status').textContent=accepted?'Your choice is saved. ENWEN may ask your accepted person to check in when the chat flags a concern.':'Permission is off. No new check-in emails are authorised.';}}
+    try{await request('/alert-permission',{method:'POST',body:{accepted,notice_version:alertNotice.notice_version}});const current=await request('/alert-permission');if(session===generation){alertNotice=current;by('alert-ack').checked=false;by('alert-status').textContent=permissionStatus();}}
     catch(e){if(session===generation)by('alert-status').textContent=e.message;}
     finally{if(session===generation){busy=false;controls();}}
   }

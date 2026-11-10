@@ -6,11 +6,12 @@ from uuid import UUID
 from fastapi import APIRouter,Depends,HTTPException,Query,Response
 from pydantic import BaseModel,ConfigDict,Field,StrictBool,field_validator
 from sqlalchemy import select,func,update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from authentication import AccountResponse,get_current_user
 from database import engine
 from models import User
-from community_models import CommunityModerator as Moderator,CommunityPost as Post,CommunityFeedback as Feedback,CommunityReport as Report,CommunityReview as Review
+from community_models import CommunityModerator as Moderator,CommunityPost as Post,CommunityFeedback as Feedback,CommunityReport as Report,CommunityReview as Review,CommunityReplyRead as ReplyRead
 from safety_screen import support_signal
 
 router=APIRouter(prefix='/community',tags=['Peer reflections'])
@@ -46,6 +47,11 @@ def own(row):
     if isinstance(row,Post):value['title']=row.title
     return value
 
+def reply_counts(db,posts):
+    ids=[row.post_id for row in posts if row.status=='published']
+    if not ids:return {}
+    return {pid:int(count) for pid,count in db.execute(select(Feedback.post_id,func.count()).where(Feedback.post_id.in_(ids),Feedback.status=='published').group_by(Feedback.post_id))}
+
 class Submission(BaseModel):
     model_config=ConfigDict(extra='forbid')
     request_id:UUID
@@ -74,6 +80,10 @@ class ReviewCreate(BaseModel):
     expected_revision:int=Field(strict=True,ge=1)
     notice_version:str=Field(max_length=40)
     acknowledged:StrictBool
+
+class ReadReplies(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    feedback_ids:list[UUID]=Field(min_length=1,max_length=50)
 def acknowledgement(data):
     if data.notice_version!=VERSION or not data.acknowledged:fail(409,'Read and agree to the current community-sharing notice.')
 def quota(db,table,user_id,maximum):
@@ -103,7 +113,8 @@ def feed(response:Response,limit:int=Query(12,ge=1,le=24),offset:int=Query(0,ge=
     response.headers['Cache-Control']='no-store'
     with Session(engine) as db:
         rows=db.scalars(select(Post).where(Post.status=='published').order_by(Post.published_at.desc(),Post.post_id.desc()).offset(offset).limit(limit)).all()
-        return [public(row,user) for row in rows]
+        counts=reply_counts(db,rows)
+        return [{**public(row,user),'reply_count':counts.get(row.post_id,0)} for row in rows]
 
 @router.get('/mine')
 def mine(response:Response,limit:int=Query(20,ge=1,le=50),offset:int=Query(0,ge=0,le=10000),user:AccountResponse=Depends(get_current_user)):
@@ -112,7 +123,36 @@ def mine(response:Response,limit:int=Query(20,ge=1,le=50),offset:int=Query(0,ge=
         # Independent pagination for each category keeps private submission history bounded.
         posts=db.scalars(select(Post).where(Post.author_id==user.user_id).order_by(Post.created_at.desc(),Post.post_id.desc()).offset(offset).limit(limit)).all()
         feedback=db.scalars(select(Feedback).where(Feedback.author_id==user.user_id).order_by(Feedback.created_at.desc(),Feedback.feedback_id.desc()).offset(offset).limit(limit)).all()
-        return {'posts':[own(row) for row in posts],'feedback':[own(row) for row in feedback]}
+        counts=reply_counts(db,posts)
+        parents={row.post_id:row for row in db.scalars(select(Post).where(Post.post_id.in_([row.post_id for row in feedback])))} if feedback else {}
+        return {'posts':[{**own(row),'reply_count':counts.get(row.post_id,0)} for row in posts],
+            'feedback':[{**own(row),'post_id':str(row.post_id),'post_title':parents[row.post_id].title if parents[row.post_id].status=='published' else None,'parent_available':parents[row.post_id].status=='published'} for row in feedback]}
+
+@router.get('/activity')
+def activity(response:Response,user:AccountResponse=Depends(member)):
+    response.headers['Cache-Control']='no-store'
+    with Session(engine) as db:
+        # Rank all visible replies before filtering read receipts, so a notice
+        # opens the correct reader page even when earlier replies were read.
+        ranked=select(Feedback.feedback_id,func.row_number().over(partition_by=Feedback.post_id,order_by=(Feedback.published_at,Feedback.feedback_id)).label('position')).join(Post,Post.post_id==Feedback.post_id).where(
+            Post.author_id==user.user_id,Post.status=='published',Feedback.status=='published').subquery()
+        query=select(Feedback,Post.title,ranked.c.position).join(ranked,ranked.c.feedback_id==Feedback.feedback_id).join(Post,Post.post_id==Feedback.post_id).outerjoin(ReplyRead,ReplyRead.feedback_id==Feedback.feedback_id).where(ReplyRead.feedback_id.is_(None))
+        count=db.scalar(select(func.count()).select_from(query.subquery()))
+        rows=db.execute(query.order_by(Feedback.published_at.desc(),Feedback.feedback_id.desc()).limit(20)).all()
+        return {'unread_count':count,'items':[{'id':str(row.feedback_id),'post_id':str(row.post_id),'post_title':title,
+            'author_label':public(row,user)['author_label'],'published_at':row.published_at,'offset':((position-1)//20)*20} for row,title,position in rows]}
+
+@router.post('/posts/{post_id}/read')
+def read_replies(post_id:UUID,data:ReadReplies,response:Response,user:AccountResponse=Depends(member)):
+    response.headers['Cache-Control']='no-store'
+    with Session(engine) as db,db.begin():
+        post=db.get(Post,post_id)
+        if not post or post.status!='published' or post.author_id!=user.user_id:fail(404,'Your shared reflection is unavailable.')
+        ids=set(data.feedback_ids)
+        available=set(db.scalars(select(Feedback.feedback_id).where(Feedback.post_id==post_id,Feedback.feedback_id.in_(ids),Feedback.status=='published')))
+        if available!=ids:fail(404,'A published response was not found on your reflection.')
+        db.execute(insert(ReplyRead).values([{'feedback_id':fid} for fid in ids]).on_conflict_do_nothing(index_elements=['feedback_id']))
+    return {'recorded':True}
 
 @router.get('/posts/{post_id}')
 def read_post(post_id:UUID,response:Response,offset:int=Query(0,ge=0,le=10000),limit:int=Query(20,ge=1,le=50),user:AccountResponse=Depends(member)):
@@ -121,7 +161,8 @@ def read_post(post_id:UUID,response:Response,offset:int=Query(0,ge=0,le=10000),l
         post=db.get(Post,post_id)
         if not post or post.status!='published':fail(404,'This shared reflection is unavailable.')
         rows=db.scalars(select(Feedback).where(Feedback.post_id==post_id,Feedback.status=='published').order_by(Feedback.published_at,Feedback.feedback_id).offset(offset).limit(limit)).all()
-        return {'post':public(post,user),'feedback':[public(row,user) for row in rows]}
+        pending=db.scalar(select(func.count()).select_from(Feedback).where(Feedback.post_id==post_id,Feedback.author_id==user.user_id,Feedback.status.in_(('pending','flagged'))))
+        return {'post':public(post,user),'feedback':[public(row,user) for row in rows],'my_pending_replies':pending}
 
 @router.post('/posts/{post_id}/feedback',status_code=201)
 def create_feedback(post_id:UUID,data:FeedbackCreate,response:Response,user:AccountResponse=Depends(member)):
@@ -172,15 +213,18 @@ def report(kind:Literal['post','feedback'],target_id:UUID,data:ReportCreate,resp
 def queue(response:Response,user:AccountResponse=Depends(staff)):
     response.headers['Cache-Control']='no-store';items=[]
     with Session(engine) as db:
+        own_pending=sum(db.scalar(select(func.count()).select_from(table).where(table.author_id==user.user_id,table.status.in_(('pending','flagged')))) for table in (Post,Feedback))
         for kind,table in (('post',Post),('feedback',Feedback)):
             reported=select(Report.report_id).where(Report.kind==kind,Report.target_id==(Post.post_id if kind=='post' else Feedback.feedback_id),Report.resolved_at.is_(None)).exists()
             query=select(table).where(table.author_id!=user.user_id,((table.status.in_(('pending','flagged')))|((table.status=='published')&reported)))
             if kind=='feedback':query=query.join(Post,Post.post_id==Feedback.post_id).where(Post.status=='published')
             for row in db.scalars(query.order_by(table.support_flag.desc(),table.privacy_flag.desc(),table.created_at).limit(50)):
                 reports=db.scalars(select(Report.reason).where(Report.kind==kind,Report.target_id==identifier(row),Report.resolved_at.is_(None))).all()
-                value=own(row);value.update(revision=row.revision,privacy_flag=row.privacy_flag,reports=reports);items.append(value)
+                value=own(row);value.update(revision=row.revision,privacy_flag=row.privacy_flag,reports=reports)
+                if kind=='feedback':value['post_title']=db.get(Post,row.post_id).title
+                items.append(value)
     items.sort(key=lambda x:(not x['support_required'],not bool(x['reports']),not x['privacy_flag'],x['created_at'],x['id']))
-    return {'items':items[:20],'notice_version':REVIEW_VERSION,'text':REVIEW_NOTICE}
+    return {'items':items[:20],'own_pending':own_pending,'notice_version':REVIEW_VERSION,'text':REVIEW_NOTICE}
 
 @router.post('/moderation/{kind}/{target_id}')
 def review(kind:Literal['post','feedback'],target_id:UUID,data:ReviewCreate,response:Response,user:AccountResponse=Depends(staff)):

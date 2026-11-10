@@ -22,18 +22,18 @@
 <script src="/static/app.js?v=20261109-review" defer></script>
 <script src="/static/mood-insights.js?v=20261109-review" defer></script>
 <link rel="stylesheet" href="/static/mood-insights.css?v=20261109-review">
-<script src="/static/community.js?v=20261109-review" defer></script>
-<link rel="stylesheet" href="/static/community.css?v=20261109-review">
+<script src="/static/community.js?v=20261110-connected" defer></script>
+<link rel="stylesheet" href="/static/community.css?v=20261110-connected">
 <script src="/static/resource-admin.js?v=20261109-review" defer></script>
 <link rel="stylesheet" href="/static/resource-admin.css?v=20261109-review">
 <script src="/static/journals.js?v=20261109-review" defer></script>
   <script src="/static/trusted-contact.js?v=20261109-review" defer></script>
-  <script src="/static/live-contacts.js?v=20261109-review" defer></script>
+  <script src="/static/live-contacts.js?v=20261110-delivery" defer></script>
   <script src="/static/suggestions.js?v=20261109-review" defer></script>
 
   <script src="/static/resources.js?v=20261109-review" defer></script>
   <script src="/static/pause.js?v=20261109-review" defer></script>
-  <script src="/static/safety_support.js?v=20261109-review" defer></script>
+  <script src="/static/safety_support.js?v=20261110-delivery" defer></script>
   <link rel="stylesheet" href="/static/safety_support.css?v=20261109-review">
   <script src="/static/chat.js?v=20261109-review" defer></script>
   <link rel="stylesheet" href="/static/chat.css?v=20261109-review">
@@ -373,6 +373,9 @@
             <button type="button" id="community-feed-tab">Read together</button><button type="button" id="community-write-tab">Share a reflection</button><button type="button" id="community-mine-tab">My sharing</button><button type="button" id="community-review-tab" hidden>Moderation</button>
           </div>
           <p id="community-status" class="status" role="status" aria-live="polite"></p>
+          <aside id="community-activity" class="community-activity" hidden aria-labelledby="community-activity-title"><h3 id="community-activity-title">A little kindness found you 🌼</h3><p id="community-activity-count" role="status" aria-live="polite"></p><div id="community-activity-list"></div></aside>
+          <p id="community-feedback-pending" class="community-notice" hidden></p>
+          <p id="community-review-count" class="small-note" hidden></p>
           <aside id="community-support" class="community-support" hidden><h3>A little human support, first.</h3><p>This submission is held out of the feed for support review. If it describes how you feel right now, reach out to someone you trust or use the human-support resources. Community moderation is not continuously monitored and does not send contact alerts.</p><a href="#/resources">Find human support →</a><a href="#/pause">Take a grounding pause →</a></aside>
           <section id="community-feed-view"><div class="community-section-heading"><h3>Reflections from fellow students 🌱</h3><button type="button" id="community-refresh">Refresh</button></div><p class="small-note">A petal from someone else’s day. Each reflection is reviewed before it reaches the garden.</p><div id="community-feed" class="community-grid"></div><div class="community-actions"><button type="button" id="community-feed-prev">← Newer</button><button type="button" id="community-feed-next">Older →</button></div></section>
           <section id="community-write-view" hidden><h3>A reflection you choose to share.</h3><p>This is a separate community submission. Your private journal stays private.</p><form id="community-post-form"><fieldset id="community-post-fields" disabled><legend>Your shared reflection</legend><label for="community-post-title">A title for this moment</label><input id="community-post-title" maxlength="120" required placeholder="A small win between deadlines"><label for="community-post-content">What would you like to share?</label><textarea id="community-post-content" rows="6" maxlength="2000" required placeholder="A thought, a moment, something that helped you feel a little more like yourself…"></textarea><p class="small-note">Up to 2,000 characters. Leave out names, contact details and identifying information.</p><p id="community-post-notice" class="community-notice"></p><label class="community-ack"><input id="community-post-ack" type="checkbox" required><span>I have read this notice and choose to submit this reflection for community review.</span></label><button type="submit">Submit for review 🌼</button></fieldset></form></section>

@@ -53,7 +53,30 @@ MESSAGES={'disabled':'Live check-in emails are disabled. No real notification wa
  'uncertain':'Email acceptance is not confirmed. No automatic retry occurred; contact someone directly instead of waiting.'}
 def result(row):
     status='uncertain' if row.status=='dispatching' else row.status
-    return {'event_id':str(row.event_id),'alert':{'status':status,'message':MESSAGES[status]}}
+    message=MESSAGES[status]
+    if status=='blocked_cooldown' and local_demo():
+        message='The authorised one-email presentation test has already been used. No new email was sent. Wider sending requires public deployment and a separate delivery setup.'
+    return {'event_id':str(row.event_id),'alert':{'status':status,'message':message,'requested_at':row.created_at.isoformat()}}
+
+def recent_alert(db,user_id,current_time):
+    return db.scalar(select(LiveEmailAlert.event_id).where(LiveEmailAlert.user_id==user_id,
+        LiveEmailAlert.status.in_(('dispatching','provider_accepted','uncertain')),
+        *(() if local_demo() else (LiveEmailAlert.created_at>current_time-timedelta(minutes=10),))).limit(1))
+
+def delivery_state(db,user,enrollment,accepted):
+    """Describe the same gates used by dispatch; permission alone is not readiness."""
+    if local_demo():
+        try: eligible=user.email.lower()==os.getenv('LOCAL_DEMO_USER_EMAIL','').strip().lower() and (not enrollment or enrollment.email.lower()==demo_recipient()) and os.getenv('LOCAL_DEMO_NOTIFICATIONS','false').lower()=='true'
+        except ValueError: eligible=False
+        if not eligible:return False,'This computer can send only the approved demonstration account’s email to its verified mailbox.'
+    try:configuration()
+    except (ValueError,TypeError):return False,'Email sending is not configured for this installation.'
+    if os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()!='true':return False,'Check-in email sending is not enabled on this installation.'
+    if not enrollment:return False,'Your trusted person needs to accept their email invitation first.'
+    if not accepted or not user.wellness_consent_current:return False,'Check-in email permission is needed before sending.'
+    if recent_alert(db,user.user_id,db.scalar(select(func.clock_timestamp()))):
+        return False,('The one-email presentation test has already been used. No further check-in emails will be sent in this mode.' if local_demo() else 'A check-in email was recently requested. New alerts are paused for ten minutes to avoid duplicates.')
+    return True,('Ready for the approved one-email presentation test to your verified mailbox.' if local_demo() else 'Ready to request a check-in from your accepted trusted person.')
 def latest(db,user_id,kind):
     if kind=='live_email_alert':return db.scalar(select(LiveEmailPermission).where(LiveEmailPermission.user_id==user_id).order_by(LiveEmailPermission.recorded_at.desc(),LiveEmailPermission.permission_id.desc()).limit(1))
     return db.scalar(select(Consent).where(Consent.user_id==user_id,Consent.consent_type==kind).order_by(Consent.recorded_at.desc(),Consent.consent_id.desc()).limit(1))
@@ -67,7 +90,12 @@ def read_permission(response:Response,user:AccountResponse=Depends(get_current_u
     response.headers['Cache-Control']='no-store'
     with Session(engine) as db:
         recipient=db.scalar(select(Invitation).where(Invitation.user_id==user.user_id,Invitation.decision=='accepted',Invitation.revoked_at.is_(None),Invitation.recipient_notice_version==RECIPIENT_VERSION).order_by(Invitation.created_at.desc()).limit(1))
-        return {'notice_version':VERSION,'text':NOTICE,'short_text':'I allow ENWEN to ask my accepted trusted person to check in when chat messages suggest danger. It shares my name, not my private words or scores. Signals may be wrong or missed. I can turn this off; my person can withdraw. Email and a response are not guaranteed.','accepted':agreed(db,user.user_id,'live_email_alert',VERSION,recipient),'delivery_enabled':os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true'}
+        accepted=agreed(db,user.user_id,'live_email_alert',VERSION,recipient)
+        available,reason=delivery_state(db,user,recipient,accepted)
+        last=db.scalar(select(LiveEmailAlert).where(LiveEmailAlert.user_id==user.user_id).order_by(LiveEmailAlert.created_at.desc(),LiveEmailAlert.event_id.desc()).limit(1))
+        return {'notice_version':VERSION,'text':NOTICE,'short_text':'I allow ENWEN to ask my accepted trusted person to check in when chat messages suggest danger. It shares my name, not my private words or scores. Signals may be wrong or missed. I can turn this off; my person can withdraw. Email and a response are not guaranteed.','accepted':accepted,'delivery_enabled':os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true',
+            'sending_available':available,'sending_reason':reason,'delivery_mode':'local_demo' if local_demo() else 'production',
+            'last_alert':{'status':result(last)['alert']['status'],'message':result(last)['alert']['message'],'created_at':last.created_at} if last else None}
 @router.post('')
 def permission(data:Permission,response:Response,user:AccountResponse=Depends(get_current_user)):
     response.headers['Cache-Control']='no-store'
@@ -97,7 +125,7 @@ def create_live_alert(user_id,request_id,demonstration=False):
         elif os.getenv('LIVE_CONTACT_ALERTS_ENABLED','false').lower()=='true':
             if not agreed(db,user_id,'wellness_use',CONSENT_VERSION) or not agreed(db,user_id,'live_email_alert',VERSION,enrollment):status='blocked_consent'
             elif not enrollment:status='blocked_unconfirmed'
-            elif db.scalar(select(LiveEmailAlert.event_id).where(LiveEmailAlert.user_id==user_id,LiveEmailAlert.status.in_(('dispatching','provider_accepted','uncertain')),*(() if local_demo() else (LiveEmailAlert.created_at>now-timedelta(minutes=10),))).limit(1)):status='blocked_cooldown'
+            elif recent_alert(db,user_id,now):status='blocked_cooldown'
             else:
                 try:_,sender=configuration()
                 except (ValueError,TypeError):status='disabled'

@@ -5,7 +5,7 @@
   // intervention and reported delivery outcome; it never sends an alert.
   let panel = null, isActive = false, lastEvent = null;
   const statusLabels = {
-    provider_accepted: "A check-in email is on its way to your trusted person",
+    provider_accepted: "A check-in email was submitted to the provider",
     blocked_demo: "Fictional demonstration; no real person notified",
     local_test_captured: "Local demonstration email captured",
     blocked_no_contact: "No trusted contact is saved",
@@ -146,19 +146,21 @@
     const alert = data.alert && typeof data.alert === "object" ? data.alert : {};
     const label = statusLabels[alert.status] || "Delivery is not confirmed";
     delivery.textContent = alert.status === "provider_accepted"
-      ? "A check-in email has been submitted for your trusted person. Please reach out directly too; they may not have seen it yet."
+      ? "A check-in email was submitted for this conversation. Reopening it does not send another email. Please reach out directly too; receipt and a response are not confirmed here."
       : label + ". " + text(alert.message,"Please reach out to a person directly too.",1200);
     const shortStatus={
       blocked_consent:'No email was sent because required permission is missing. You can reach out to your person directly.',
       blocked_unconfirmed:'No email was sent because the invitation has not been accepted. Please reach out to someone directly.',
       blocked_demo:'This fictional test did not contact a person.',
-      blocked_cooldown:'A recent request is already recorded. No additional email was sent.',
+      blocked_cooldown:text(alert.message,'A recent request is already recorded. No additional email was sent.',1200),
       disabled:'Email sending is unavailable. Please reach out to someone directly.',
       uncertain:'We could not confirm the email send. Please reach out to someone directly.',
       pending:'Checking your contact permission. You can reach human support now.',
       not_requested:'No contact email was requested from this view.'
     };
     if(shortStatus[alert.status])delivery.textContent=shortStatus[alert.status];
+    const requested=new Date(alert.requested_at);
+    if(alert.requested_at&&Number.isFinite(requested.getTime()))delivery.textContent+=' Request recorded '+requested.toLocaleString('en-KE',{timeZone:'Africa/Nairobi',dateStyle:'medium',timeStyle:'short'})+'.';
     alertBox.append(delivery);
 
     const links = make("nav", "safety-support-actions");

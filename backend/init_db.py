@@ -3,7 +3,7 @@ from sqlalchemy import inspect
 from database import engine
 from models import Base
 from mood_context_models import MoodContext
-from community_models import CommunityModerator,CommunityPost,CommunityFeedback,CommunityReport,CommunityReview
+from community_models import CommunityModerator,CommunityPost,CommunityFeedback,CommunityReport,CommunityReview,CommunityReplyRead
 from resource_admin_models import ResourceCurator,ResourceDraft,ResourceAudit
 from signup_invitation_models import SignupInvitationChoice
 from journal_models import JournalEntry
@@ -43,6 +43,7 @@ def create_tables():
         "community_feedback",
         "community_reports",
         "community_reviews",
+        "community_reply_reads",
         "resource_curators",
         "resource_drafts",
         "resource_audit",

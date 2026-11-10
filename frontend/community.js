@@ -5,16 +5,18 @@
   let generation=0,loadId=0,notice=null,wellness=false,busy=false,view='feed',post=null,reportTarget=null,postAttempt=null,feedbackAttempt=null;
   let feedOffset=0,mineOffset=0,feedbackOffset=0,feedCount=0,mineCount=0,feedbackCount=0;
   const requests=new Set();
+  let rendered='',activityRendered='',queueCards=new Map(),pollTimer=null,updateError=false;
   function message(text=''){by('status').textContent=text;}
   function reset(){
-    generation++;loadId++;for(const c of requests)c.abort();requests.clear();notice=null;wellness=busy=false;view='feed';post=reportTarget=postAttempt=feedbackAttempt=null;
+    generation++;loadId++;if(pollTimer!==null)window.clearInterval(pollTimer);pollTimer=null;rendered=activityRendered='';updateError=false;queueCards.clear();for(const c of requests)c.abort();requests.clear();notice=null;wellness=busy=false;view='feed';post=reportTarget=postAttempt=feedbackAttempt=null;
     feedOffset=mineOffset=feedbackOffset=feedCount=mineCount=feedbackCount=0;
     for(const id of ['post-form','feedback-form','report-form'])by(id).reset();
-    for(const id of ['feed','mine','detail','feedback','queue'])by(id).replaceChildren();
+    for(const id of ['feed','mine','detail','feedback','queue','activity-list'])by(id).replaceChildren();
+    by('activity').hidden=true;by('feedback-pending').hidden=true;by('activity-count').textContent='';by('review-count').textContent='';
     for(const id of ['post-notice','feedback-notice','review-notice'])by(id).textContent='';
     by('report-form').hidden=by('support').hidden=true;message();panels();controls();
   }
-  function panels(){for(const name of ['feed','write','mine','detail','review'])by(name+'-view').hidden=name!==view;for(const name of ['feed','write','mine','review'])by(name+'-tab').setAttribute('aria-pressed',String(view===name));}
+  function panels(){for(const name of ['feed','write','mine','detail','review'])by(name+'-view').hidden=name!==view;for(const name of ['feed','write','mine','review'])by(name+'-tab').setAttribute('aria-pressed',String(view===name));by('review-count').hidden=view!=='review';by('feedback-pending').hidden=true;}
   function controls(){
     by('post-fields').disabled=busy||!notice||!wellness;
     by('feedback-fields').disabled=busy||!notice||!wellness||!post||post.is_mine;
@@ -43,14 +45,23 @@
   }
   async function setup(user){
     reset();wellness=user.wellness_consent_current===true;const session=generation;
-    try{const n=await request('/notice');if(session!==generation)return;notice=n;by('post-notice').textContent=by('feedback-notice').textContent=n.text;by('review-notice').textContent=n.review_text;controls();if(location.hash==='#/community')void load();}
+    try{const n=await request('/notice');if(session!==generation)return;notice=n;by('post-notice').textContent=by('feedback-notice').textContent=n.text;by('review-notice').textContent=n.review_text;controls();if(window.setInterval)pollTimer=window.setInterval(refreshVisible,10000);if(location.hash==='#/community')void load();}
     catch(e){if(session===generation)message(e.message);}
   }
   function button(text,fn,locked=false){const b=make('button',text);b.type='button';b.dataset.communityAction='true';b.dataset.locked=String(locked);b.disabled=busy||locked;b.addEventListener('click',()=>{if(!busy&&!b.disabled)void fn();});return b;}
   function date(value){const d=new Date(value);return Number.isNaN(d.getTime())?'Date unavailable':d.toLocaleDateString('en-KE',{dateStyle:'medium',timeZone:'Africa/Nairobi'});}
+  function replyLabel(count){return count===1?'1 petal of encouragement':(count||0)+' petals of encouragement';}
+  function renderActivity(data){
+    if(!data)return;
+    const fingerprint=JSON.stringify(data);if(activityRendered===fingerprint)return;activityRendered=fingerprint;
+    by('activity').hidden=!data.unread_count;by('activity-count').textContent=data.unread_count?data.unread_count+' new '+(data.unread_count===1?'petal':'petals'):'';
+    const list=by('activity-list');list.replaceChildren();
+    for(const item of data.items||[]){const card=make('div',undefined,'community-activity-item');card.append(make('p',item.author_label+' left encouragement on “'+item.post_title+'”.'),button('Read this petal →',()=>open(item.post_id,item.offset||0)));list.append(card);}
+  }
   function publicCard(row,detail=false){
     const card=make('article',undefined,detail?'community-detail':'community-card');
     card.append(make('p',row.author_label+' · '+date(row.published_at),'community-meta'),make(detail?'h3':'h4',row.title),make('p',detail?row.content:row.content.slice(0,220)+(row.content.length>220?'…':''),'community-body'));
+    if(!detail)card.append(make('p',replyLabel(row.reply_count),'community-meta'));
     const actions=make('div',undefined,'community-actions');
     if(!detail)actions.append(button('Read reflection →',()=>open(row.id)));
     else actions.append(button('Report this reflection',()=>openReport('post',row.id)));
@@ -63,8 +74,12 @@
     for(const row of rows){
       const card=make('article',undefined,'community-card');card.append(make('span',row.status,'community-status-chip'),make('h4',row.title||'Your peer encouragement'),make('p',date(row.created_at),'community-meta'),make('p',row.content,'community-body'));
       if(row.review_reason)card.append(make('p','Review reason: '+row.review_reason.replaceAll('_',' '),'small-note'));
+      if(row.status==='pending'||row.status==='flagged')card.append(make('p','Waiting for a moderator. You’ll find it in the garden once approved.','small-note'));
+      if(row.kind==='post'&&row.status==='published')card.append(make('p',replyLabel(row.reply_count),'community-meta'));
+      if(row.kind==='feedback'&&row.post_title)card.append(make('p','For “'+row.post_title+'”','community-meta'));
       const actions=make('div',undefined,'community-actions');
       if(row.kind==='post'&&row.status==='published')actions.append(button('Read shared reflection',()=>open(row.id)));
+      if(row.kind==='feedback'&&row.parent_available)actions.append(button('Read reflection and responses',()=>open(row.post_id)));
       if(row.status!=='withdrawn')actions.append(button('Withdraw sharing',()=>withdraw(row)));
       card.append(actions);target.append(card);
     }
@@ -74,11 +89,18 @@
     post=data.post;by('detail').replaceChildren(publicCard(post,true));by('feedback').replaceChildren();feedbackCount=data.feedback.length;
     for(const row of data.feedback.slice(0,20)){const card=make('article',undefined,'community-feedback-card');card.append(make('p',row.author_label+' · '+date(row.published_at),'community-meta'),make('p',row.content,'community-body'),button('Report response',()=>openReport('feedback',row.id)));by('feedback').append(card);}
     if(!data.feedback.length)by('feedback').append(make('p','No reviewed responses on this page yet. A little encouragement can go a long way.'));
+    by('feedback-pending').hidden=!data.my_pending_replies;
+    by('feedback-pending').textContent=data.my_pending_replies?'Your '+(data.my_pending_replies===1?'response is':'responses are')+' waiting for moderation. Once approved, '+(data.my_pending_replies===1?'it’ll':'they’ll')+' appear here and your fellow student will see a new petal.':'';
   }
   function renderQueue(data){
     const target=by('queue');target.replaceChildren();by('review-notice').textContent=data.text;
+    by('review-count').textContent=data.own_pending?data.own_pending+' of your own submissions await another moderator. Find them in My sharing.':'New submissions appear here automatically while this page is open.';
+    const nextCards=new Map();
     for(const row of data.items){
+      const key=row.kind+':'+row.id,fingerprint=JSON.stringify([data.notice_version,row]),previous=queueCards.get(key);
+      if(previous?.fingerprint===fingerprint){target.append(previous.card);nextCards.set(key,previous);continue;}
       const card=make('article',undefined,'community-card');card.append(make('span',row.kind+' · '+row.status,'community-status-chip'),make('h4',row.title||'Peer encouragement'),make('p',row.content,'community-body'));
+      if(row.post_title)card.append(make('p','In response to “'+row.post_title+'”','community-meta'));
       const flags=[];if(row.support_required)flags.push('Needs support review');if(row.privacy_flag)flags.push('Possible identifying details');if(row.reports.length)flags.push('Reports: '+row.reports.join(', '));
       if(flags.length)card.append(make('p',flags.join(' · '),'community-review-flags'));
       const reason=make('select');reason.setAttribute('aria-label','Reason for this moderation decision');
@@ -90,25 +112,33 @@
       const reviewControls=()=>{publish.dataset.locked=String(!ack.checked||!canPublish||reason.value!=='community_fit');reject.dataset.locked=String(!ack.checked);controls();};
       ack.addEventListener('change',reviewControls);reason.addEventListener('change',reviewControls);
       const actions=make('div',undefined,'community-actions');actions.append(publish,reject);card.append(reason,label,actions);target.append(card);
+      nextCards.set(key,{fingerprint,card});
     }
+    queueCards=nextCards;
     if(!data.items.length)target.append(make('p','No submissions you can review right now. Your own sharing requires another moderator.'));
   }
-  async function load(){
+  async function load(silent=false){
     if(!accessToken)return;if(!notice){message('Connecting to the community…');return;}
     if(view==='write'){controls();return;}
     if(!wellness&&!['mine','review'].includes(view)){message('Current wellness consent is needed to read and share. You can still withdraw your earlier sharing under My sharing.');return;}
-    const session=generation,id=++loadId,target=view;message('Loading this community view…');
+    const session=generation,id=++loadId,target=view,key=[view,feedOffset,mineOffset,feedbackOffset,post?.id].join(':');if(!silent)message('Loading this community view…');
     try{
-      const data=await request(target==='feed'?'/feed?limit=13&offset='+feedOffset:target==='mine'?'/mine?limit=13&offset='+mineOffset:target==='review'?'/moderation/queue':'/posts/'+post.id+'?limit=21&offset='+feedbackOffset);
+      const [activity,data]=await Promise.all([wellness?request('/activity').catch(()=>null):Promise.resolve(null),request(target==='feed'?'/feed?limit=13&offset='+feedOffset:target==='mine'?'/mine?limit=13&offset='+mineOffset:target==='review'?'/moderation/queue':'/posts/'+post.id+'?limit=21&offset='+feedbackOffset)]);
       if(session!==generation||id!==loadId||view!==target)return;
-      if(target==='feed')renderFeed(data);else if(target==='mine')renderMine(data);else if(target==='review')renderQueue(data);else renderDetail(data);message();
-    }catch(e){if(session===generation&&id===loadId){for(const name of ['feed','mine','queue','detail','feedback'])by(name).replaceChildren();message(e.name==='AbortError'?'This view took too long. Please refresh.':e.message);}}
+      renderActivity(activity);const fingerprint=key+JSON.stringify(data);
+      if(!silent||fingerprint!==rendered){if(target==='feed')renderFeed(data);else if(target==='mine')renderMine(data);else if(target==='review')renderQueue(data);else renderDetail(data);rendered=fingerprint;}
+      if(!silent||updateError){message();updateError=false;}
+      if(!silent&&target==='detail'&&data.post.is_mine&&data.feedback.length){
+        await request('/posts/'+post.id+'/read','POST',{feedback_ids:data.feedback.slice(0,20).map(row=>row.id)});
+        const updated=await request('/activity');if(session===generation&&id===loadId)renderActivity(updated);
+      }
+    }catch(e){if(session===generation&&id===loadId){if(!silent){rendered='';for(const name of ['feed','mine','queue','detail','feedback'])by(name).replaceChildren();}updateError=true;message(e.name==='AbortError'?'Community updates paused. Please refresh.':e.message);}}
     finally{if(session===generation)controls();}
   }
   async function show(name){if(busy)return;loadId++;view=name;by('report-form').hidden=true;by('support').hidden=true;panels();message();await load();}
-  async function open(id){
+  async function open(id,offset=0){
     if(post?.id!==id&&by('feedback-content').value.trim()&&!window.confirm('Replace the unsent response for the previous reflection?'))return;
-    if(post?.id!==id){by('feedback-form').reset();feedbackAttempt=null;}post={id};feedbackOffset=0;await show('detail');
+    if(post?.id!==id){by('feedback-form').reset();feedbackAttempt=null;}post={id};feedbackOffset=offset;await show('detail');
   }
   function attempt(previous,payload){if(!previous||Object.entries(payload).some(([k,v])=>previous[k]!==v)){if(!window.crypto?.randomUUID)throw new Error('Secure submission identifiers are unavailable.');return {...payload,request_id:window.crypto.randomUUID()};}return previous;}
   async function write(fn,uncertain='Outcome unconfirmed. Your draft and request identifier are kept. Refresh My sharing before retrying; nothing was automatically resent.'){if(busy)return;const session=generation;busy=true;controls();try{await fn(session);}catch(e){if(session===generation)message(e.name==='AbortError'||e instanceof TypeError?uncertain:e.message);}finally{if(session===generation){busy=false;controls();}}}
@@ -118,7 +148,7 @@
   });
   by('feedback-form').addEventListener('submit',event=>{
     event.preventDefault();if(by('feedback-fields').disabled||!by('feedback-form').reportValidity())return;
-    void write(async session=>{feedbackAttempt=attempt(feedbackAttempt,{post_id:post.id,content:by('feedback-content').value.trim()});const {post_id,...payload}=feedbackAttempt;const result=await request('/posts/'+post_id+'/feedback','POST',{...payload,notice_version:notice.notice_version,acknowledged:by('feedback-ack').checked});if(session!==generation)return;by('feedback-form').reset();feedbackAttempt=null;by('support').hidden=!result.support_required;message('Response saved for moderation. It is not publicly visible yet; check My sharing.');});
+    void write(async session=>{feedbackAttempt=attempt(feedbackAttempt,{post_id:post.id,content:by('feedback-content').value.trim()});const {post_id,...payload}=feedbackAttempt;const result=await request('/posts/'+post_id+'/feedback','POST',{...payload,notice_version:notice.notice_version,acknowledged:by('feedback-ack').checked});if(session!==generation)return;by('feedback-form').reset();feedbackAttempt=null;await load();by('support').hidden=!result.support_required;message('Response saved for moderation. It is not publicly visible yet; check My sharing.');});
   });
   async function withdraw(row){if(!window.confirm('Withdraw this submission from the community feed? The submission and review history will remain in your account.'))return;await write(async session=>{await request('/'+row.kind+'/'+row.id+'/withdraw','POST');if(session===generation){await load();message('Sharing withdrawn. It no longer appears in the community feed.');}},'Withdrawal outcome unconfirmed. Refresh My sharing before trying again.');}
   function openReport(kind,id){reportTarget={kind,id};by('report-title').textContent=kind==='post'?'Report this shared reflection':'Report this shared response';by('report-form').reset();by('report-form').hidden=false;by('report-reason').focus();}
@@ -130,5 +160,7 @@
   by('back').addEventListener('click',()=>void show('feed'));
   for(const [name,size] of [['feed',12],['mine',12],['feedback',20]])for(const [direction,sign] of [['prev',-1],['next',1]])by(name+'-'+direction).addEventListener('click',()=>{if(busy)return;if(name==='feed')feedOffset=Math.max(0,feedOffset+sign*size);else if(name==='mine')mineOffset=Math.max(0,mineOffset+sign*size);else feedbackOffset=Math.max(0,feedbackOffset+sign*size);void load();});
   window.addEventListener('beforeunload',event=>{if(by('post-title').value.trim()||by('post-content').value.trim()||by('feedback-content').value.trim()){event.preventDefault();event.returnValue='';}});
+  function refreshVisible(){if(accessToken&&notice&&!busy&&!requests.size&&location.hash==='#/community'&&document.visibilityState!=='hidden'&&!page.hidden)void load(true);}
+  window.addEventListener('focus',refreshVisible);
   window.enwenCommunity={reset,setup,load};reset();
 })();

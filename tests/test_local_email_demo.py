@@ -53,6 +53,8 @@ with engine.connect() as connection:
             check('explicit recipient acceptance works',client.post(base+'/respond',json=decision).status_code==200)
             check('student permission remains required',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_consent' and not alert_mail.called)
             check('student permission can be recorded',client.post(base+'/alert-permission',json={'accepted':True,'notice_version':alerts.VERSION}).status_code==200)
+            ready=client.get(base+'/alert-permission').json()
+            check('permission page reports the actual one-email readiness',ready['sending_available'] and ready['delivery_mode']=='local_demo' and 'one-email' in ready['sending_reason'])
             with patch.dict(contacts.os.environ,{'LOCAL_DEMO_NOTIFICATIONS':'false'}):check('demo authorisation switch enforced',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_demo' and not alert_mail.called)
             with patch.object(ai_chat,'generate_reply') as normal:
                 request_id=str(uuid4());response=client.post('/chat',json={'messages':[{'role':'user','content':'Fictional demonstration: I want to jump off a building'}],'request_id':request_id,'external_ai_consent':True,'notice_version':ai_chat.notice_version()})
@@ -63,6 +65,11 @@ with engine.connect() as connection:
             with session(connection) as db:
                 row=db.scalar(select(alerts.LiveEmailAlert).where(alerts.LiveEmailAlert.status=='provider_accepted'));row.created_at-=timedelta(days=1);db.commit()
             check('one demo allowance persists beyond cooldown',alerts.create_live_alert(uid,uuid4(),True)['alert']['status']=='blocked_cooldown' and alert_mail.call_count==1)
+            state=client.get(base+'/alert-permission').json()
+            check('permission stays on without falsely promising another send',state['accepted'] and not state['sending_available'] and 'already been used' in state['sending_reason'])
+            check('last attempt carries honest reason and timestamp',state['last_alert']['status']=='blocked_cooldown' and 'No new email was sent' in state['last_alert']['message'] and bool(state['last_alert']['created_at']))
+            with patch.dict(contacts.os.environ,{'LOCAL_DEMO_USER_EMAIL':'another@example.com'}):
+                check('other account capability does not promise check-in delivery',not client.get(base+'/alert-permission').json()['sending_available'])
     finally:app.dependency_overrides.clear();outer.rollback()
     check('existing public records preserved',before=={n:connection.scalar(text('SELECT count(*) FROM public.'+n)) for n in names})
 print(f'Passed {len(checks)} local email demonstration checks; fake transport only.')

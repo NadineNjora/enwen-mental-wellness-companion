@@ -105,7 +105,8 @@ def summary(row, now):
     state = "revoked" if row.revoked_at else row.decision or ("expired" if row.expires_at <= now else "pending")
     return {"invitation_id":str(row.invitation_id), "full_name":row.full_name, "email":row.email,
             "status":state,"delivery_status":"uncertain" if row.delivery_status=="dispatching" else row.delivery_status,
-            "created_at":row.created_at,"expires_at":row.expires_at,"automatic_alerts_enabled":False}
+            "created_at":row.created_at,"expires_at":row.expires_at,"automatic_alerts_enabled":False,
+            "delivery_mode":"local_demo" if local_demo() else "production"}
 
 @router.get("/notice")
 def notice(response: Response):
@@ -115,7 +116,8 @@ def notice(response: Response):
     except (ValueError, TypeError):
         ready=False; reason="Real invitations require an enabled Brevo sender and a deployed public HTTPS response page."
     return {"notice_version":VERSION,"text":NOTICE,"short_text":"I have this person’s permission to share their name and email. This invitation shares my display name and response links, never my private entries. They can decline or withdraw. Check-in emails need my separate permission.","recipient_notice_version":RECIPIENT_VERSION,
-            "recipient_text":RECIPIENT_NOTICE,"ready":ready,"reason":reason,"automatic_alerts_enabled":False}
+            "recipient_text":RECIPIENT_NOTICE,"ready":ready,"reason":reason,"automatic_alerts_enabled":False,
+            "delivery_mode":"local_demo" if local_demo() else "production"}
 
 @router.get("")
 def own(response: Response, user: AccountResponse=Depends(get_current_user)):

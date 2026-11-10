@@ -43,7 +43,7 @@ def main():
         expected = {"users", "consents", "browser_sessions", "mood_entries", "journal_entries",
                     "trusted_contacts", "trusted_contact_invitations", "wellness_resources",
                     "resource_bookmarks", "chat_conversations", "chat_turns", "deleted_chat_requests", "safety_alerts", "live_contact_invitations", "knowledge_passages", "live_email_alerts", "live_email_permissions",
-                    "mood_contexts", "community_posts", "community_feedback", "community_reports", "community_reviews", "community_moderators", "resource_curators", "resource_drafts", "resource_audit", "signup_invitation_choices"}
+                    "mood_contexts", "community_posts", "community_feedback", "community_reports", "community_reviews", "community_moderators", "community_reply_reads", "resource_curators", "resource_drafts", "resource_audit", "signup_invitation_choices"}
         missing = sorted(expected - tables)
         record("PostgreSQL", "not_ready" if missing else "ready",
                "Missing tables: " + ", ".join(missing) if missing else "Connected; expected tables exist. No student records were read.", True)
